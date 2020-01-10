@@ -1,0 +1,17 @@
+{
+  "id": 1,
+  "jsonrpc": "2.0",
+  "method": "textDocument/hover",
+  "params":
+  {
+    "position":
+    {
+      "character": 9,
+      "line": 6
+    },
+    "textDocument":
+    {
+      "uri": "file:///home/trapni/work/solidity/test.sol"
+    }
+  }
+}

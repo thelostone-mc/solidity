@@ -1,0 +1,32 @@
+{
+  "jsonrpc": "2.0",
+  "method": "textDocument/didChange",
+  "params":
+  {
+    "contentChanges":
+    [
+      {
+        "range":
+        {
+          "end":
+          {
+            "character": 5,
+            "line": 12
+          },
+          "start":
+          {
+            "character": 5,
+            "line": 12
+          }
+        },
+        "rangeLength": 0,
+        "text": "unction doesEat(string calldata _food) external pure returns (bool) {\n        return keccak256(bytes(_food)) == keccak256(\"carrot\");\n    }\n\n    f"
+      }
+    ],
+    "textDocument":
+    {
+      "uri": "file:///home/trapni/work/solidity/test.sol",
+      "version": 2
+    }
+  }
+}

@@ -23,6 +23,7 @@ endif()
 
 option(SOLC_LINK_STATIC "Link solc executable statically on supported platforms" OFF)
 option(SOLC_STATIC_STDLIBS "Link solc against static versions of libgcc and libstdc++ on supported platforms" OFF)
+option(SOLIDITY_LANGUAGE_SERVER "Build Solidity Language Server" OFF)
 
 # Setup cccache.
 include(EthCcache)
@@ -99,6 +100,10 @@ add_subdirectory(tools)
 
 if (NOT EMSCRIPTEN)
 	add_subdirectory(solc)
+endif()
+
+if(SOLIDITY_LANGUAGE_SERVER)
+	add_subdirectory(solls)
 endif()
 
 if (TESTS AND NOT EMSCRIPTEN)

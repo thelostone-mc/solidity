@@ -1,0 +1,12 @@
+{
+  "jsonrpc": "2.0",
+  "method": "textDocument/didOpen",
+  "params": {
+    "textDocument": {
+      "languageId": "solidity",
+      "text": "pragma solidity >=0.5.0 <0.7.0;\n\ninterface DataFeed { function getData(address token) external returns (uint value); }\n\ncontract FeedConsumer {\n\tDataFeed feed;\n\tuint errorCount;\n\tfunction rate(address token) public returns (uint value, bool success) {\n\t\t// Permanently disable the mechanism if there are\n\t\t// more than 10 errors.\n\t\trequire(errorCount < 10);\n\t\ttry feed.getData(token) returns (uint v) {\n\t\t\treturn (v, true);\n\t\t} catch Error(string memory /*reason*/) {\n\t\t\t// This is executed in case\n\t\t\t// revert was called inside getData\n\t\t\t// and a reason string was provided.\n\t\t\terrorCount++;\n\t\t\treturn (0, false);\n\t\t} catch (bytes memory /*lowLevelData*/) {\n\t\t\t// This is executed in case revert() was used\n\t\t\t// or there was a failing assertion, division\n\t\t\t// by zero, etc. inside getData.\n\t\t\terrorCount++;\n\t\t\treturn (0, false);\n\t\t}\n\t}\n}\n\n",
+      "uri": "file:///home/trapni/ethereum/solidity/test.sol",
+      "version": 1
+    }
+  }
+}
