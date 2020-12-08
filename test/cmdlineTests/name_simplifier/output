@@ -34,7 +34,7 @@ object "C_59" {
                         if gt(offset, _4) { revert(_2, _2) }
                         if iszero(slt(add(offset, 35), calldatasize())) { revert(_2, _2) }
                         let _5 := calldataload(add(4, offset))
-                        if gt(_5, _4) { panic_error_0x41() }
+                        if gt(_5, _4) { panic_errorx41() }
                         let _6 := mul(_5, _3)
                         let dst := allocateMemory(add(_6, _3))
                         let dst_1 := dst
@@ -48,21 +48,21 @@ object "C_59" {
                             if slt(sub(calldatasize(), src), _3) { revert(_2, _2) }
                             let memPtr := mload(_1)
                             let newFreePtr := add(memPtr, _3)
-                            if or(gt(newFreePtr, _4), lt(newFreePtr, memPtr)) { panic_error_0x41() }
+                            if or(gt(newFreePtr, _4), lt(newFreePtr, memPtr)) { panic_errorx41() }
                             mstore(_1, newFreePtr)
                             mstore(memPtr, calldataload(src))
                             mstore(dst, memPtr)
                             dst := add(dst, _3)
                             src := add(src, _3)
                         }
-                        let ret, ret_1 := fun_sumArray_58(dst_1)
+                        let ret, ret_1 := fun_sumArray(dst_1)
                         let memPos := allocateMemory(_2)
-                        return(memPos, sub(abi_encode_uint256_t_string(memPos, ret, ret_1), memPos))
+                        return(memPos, sub(abi_encode_uint256_string(memPos, ret, ret_1), memPos))
                     }
                 }
                 revert(0, 0)
             }
-            function abi_encode_uint256_t_string(headStart, value0, value1) -> tail
+            function abi_encode_uint256_string(headStart, value0, value1) -> tail
             {
                 mstore(headStart, value0)
                 let _1 := 32
@@ -84,14 +84,14 @@ object "C_59" {
             {
                 memPtr := mload(64)
                 let newFreePtr := add(memPtr, size)
-                if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { panic_error_0x41() }
+                if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { panic_errorx41() }
                 mstore(64, newFreePtr)
             }
-            function copy_literal_to_memory_64902fd228f7ef267f3b474dd6ef84bae434cf5546eee948e7ca26df3eda1927() -> memPtr
+            function copy_literal_to_memoryfd228f7ef267f3b474dd6ef84bae434cf5546eee948e7ca26df3eda1927() -> memPtr
             {
                 let memPtr_1 := mload(64)
                 let newFreePtr := add(memPtr_1, 160)
-                if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr_1)) { panic_error_0x41() }
+                if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr_1)) { panic_errorx41() }
                 mstore(64, newFreePtr)
                 mstore(memPtr_1, 100)
                 memPtr := memPtr_1
@@ -104,39 +104,39 @@ object "C_59" {
             {
                 value := shr(mul(offset, 8), slot_value)
             }
-            function fun_sumArray_58(vloc__s_22_mpos) -> vloc, vloc__27_mpos
+            function fun_sumArray(var__s_mpos) -> var, var__mpos
             {
-                if iszero(lt(vloc, mload(vloc__s_22_mpos))) { panic_error_0x32() }
-                let _1 := mload(mload(add(add(vloc__s_22_mpos, mul(vloc, 32)), 32)))
-                let _2, _3 := storage_array_index_access$_t_struct$_S_storage(vloc, vloc)
+                if iszero(lt(var__mpos, mload(var__s_mpos))) { panic_errorx32() }
+                let _1 := mload(mload(add(add(var__s_mpos, mul(var__mpos, 32)), 32)))
+                let _2, _3 := storage_array_index_access_struct_S(var__mpos, var__mpos)
                 sstore(_2, _1)
-                if iszero(lt(0x01, mload(vloc__s_22_mpos))) { panic_error_0x32() }
-                let _4 := mload(mload(add(vloc__s_22_mpos, 64)))
-                if iszero(lt(vloc, 0x02)) { panic_error_0x32() }
-                let slot := add(0x02, vloc)
+                if iszero(lt(0x01, mload(var__s_mpos))) { panic_errorx32() }
+                let _4 := mload(mload(add(var__s_mpos, 64)))
+                if iszero(lt(var__mpos, 0x02)) { panic_errorx32() }
+                let slot := add(0x02, var__mpos)
                 let _5 := sload(slot)
-                let shiftBits := mul(vloc, 8)
+                let shiftBits := mul(var__mpos, 8)
                 let mask := shl(shiftBits, not(0))
                 sstore(slot, or(and(_5, not(mask)), and(shl(shiftBits, _4), mask)))
-                let _6, _7 := storage_array_index_access$_t_struct$_S_storage(0x02, vloc)
-                vloc := extract_from_storage_value_dynamict_uint256(sload(_6), _7)
-                vloc__27_mpos := copy_literal_to_memory_64902fd228f7ef267f3b474dd6ef84bae434cf5546eee948e7ca26df3eda1927()
+                let _6, _7 := storage_array_index_access_struct_S(0x02, var__mpos)
+                var := extract_from_storage_value_dynamict_uint256(sload(_6), _7)
+                var__mpos := copy_literal_to_memoryfd228f7ef267f3b474dd6ef84bae434cf5546eee948e7ca26df3eda1927()
             }
-            function panic_error_0x32()
+            function panic_errorx32()
             {
                 mstore(0, shl(224, 0x4e487b71))
                 mstore(4, 0x32)
                 revert(0, 0x24)
             }
-            function panic_error_0x41()
+            function panic_errorx41()
             {
                 mstore(0, shl(224, 0x4e487b71))
                 mstore(4, 0x41)
                 revert(0, 0x24)
             }
-            function storage_array_index_access$_t_struct$_S_storage(array, index) -> slot, offset
+            function storage_array_index_access_struct_S(array, index) -> slot, offset
             {
-                if iszero(lt(index, 0x02)) { panic_error_0x32() }
+                if iszero(lt(index, 0x02)) { panic_errorx32() }
                 slot := add(array, index)
                 offset := offset
             }

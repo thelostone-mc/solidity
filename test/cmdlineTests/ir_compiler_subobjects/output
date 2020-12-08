@@ -57,7 +57,7 @@ object "D_16" {
                         if slt(add(calldatasize(), not(3)), _1) { revert(_1, _1) }
                         let _2 := datasize("C_3")
                         let _3 := add(128, _2)
-                        if or(gt(_3, 0xffffffffffffffff), lt(_3, 128)) { panic_error_0x41() }
+                        if or(gt(_3, 0xffffffffffffffff), lt(_3, 128)) { panic_errorx41() }
                         datacopy(128, dataoffset("C_3"), _2)
                         if iszero(create(_1, 128, _2))
                         {
@@ -73,10 +73,10 @@ object "D_16" {
             {
                 memPtr := mload(64)
                 let newFreePtr := add(memPtr, size)
-                if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { panic_error_0x41() }
+                if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { panic_errorx41() }
                 mstore(64, newFreePtr)
             }
-            function panic_error_0x41()
+            function panic_errorx41()
             {
                 mstore(0, shl(224, 0x4e487b71))
                 mstore(4, 0x41)
