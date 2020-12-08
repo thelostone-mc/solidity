@@ -81,17 +81,20 @@ void NameSimplifier::findSimplification(YulString const& _name)
 	string name = _name.str();
 
 	static auto replacements = vector<pair<regex, string>>{
-		{regex("_\\$\\d+"), ""}, // removes AST IDs
+		{regex("_\\$|\\$_"), "_"}, // remove type mangling delimiters
+		{regex("_\\d+"), ""}, // removes AST IDs
+		{regex("_t_"), "_"}, // remove type prefixes
 		{regex("(abi_..code.*)_to_.*"), "$1"}, // removes _to... for abi functions
-		{regex("(stringliteral_[0-9a-f][0-9a-f][0-9a-f][0-9a-f])[0-9a-f]*"), "$1"}, // shorten string literal
-		{regex("tuple_t_"), ""},
+		{regex("(stringliteral_?[0-9a-f][0-9a-f][0-9a-f][0-9a-f])[0-9a-f]*"), "$1"}, // shorten string literal
+		{regex("tuple_"), ""},
 		{regex("_memory_ptr"), ""},
 		{regex("_calldata_ptr"), "_calldata"},
 		{regex("_fromStack"), ""},
 		{regex("_storage_storage"), "_storage"},
+		{regex("(storage.*)_?storage"), "$1"},
 		{regex("_memory_memory"), "_memory"},
-		{regex("t_contract\\$_([^_]*)_"), "$1_"},
-		{regex("index_access_t_array"), "index_access"},
+		{regex("_contract\\$_([^_]*)_?"), "$1_"},
+		{regex("index_access_(t_)?array"), "index_access"},
 		{regex("[0-9]*_$"), ""}
 	};
 
