@@ -359,6 +359,119 @@ BOOST_AUTO_TEST_CASE(metadata_revert_strings)
 	BOOST_CHECK_EQUAL(metadata["settings"]["debug"]["revertStrings"], "strip");
 }
 
+BOOST_AUTO_TEST_CASE(metadata_license_missing)
+{
+	CompilerStack compilerStack;
+	char const* sourceCode = R"(
+		pragma solidity >=0.0;
+		contract C {
+		}
+	)";
+	compilerStack.setSources({{"", std::string(sourceCode)}});
+	BOOST_REQUIRE_MESSAGE(compilerStack.compile(), "Compiling contract failed");
+
+	std::string const& serialisedMetadata = compilerStack.metadata("C");
+	BOOST_CHECK(solidity::test::isValidMetadata(serialisedMetadata));
+	Json::Value metadata;
+	BOOST_REQUIRE(util::jsonParseStrict(serialisedMetadata, metadata));
+
+	BOOST_CHECK_EQUAL(metadata["sources"].size(), 1);
+	BOOST_CHECK(metadata["sources"].isMember(""));
+	BOOST_CHECK(!metadata["sources"][""].isMember("license"));
+}
+
+BOOST_AUTO_TEST_CASE(metadata_license_gpl3)
+{
+	CompilerStack compilerStack;
+	// Can't use a raw string here due to the stylechecker.
+	char const* sourceCode =
+		"// NOTE: we also add trailing whitespace after the license, to see it is trimmed."
+		"// SPDX-License-Identifier: GPL-3.0    "
+		"pragma solidity >=0.0;"
+		"contract C {"
+		"}";
+	compilerStack.setSources({{"", std::string(sourceCode)}});
+	BOOST_REQUIRE_MESSAGE(compilerStack.compile(), "Compiling contract failed");
+
+	std::string const& serialisedMetadata = compilerStack.metadata("C");
+	BOOST_CHECK(solidity::test::isValidMetadata(serialisedMetadata));
+	Json::Value metadata;
+	BOOST_REQUIRE(util::jsonParseStrict(serialisedMetadata, metadata));
+
+	BOOST_CHECK_EQUAL(metadata["sources"].size(), 1);
+	BOOST_CHECK(metadata["sources"].isMember(""));
+	BOOST_CHECK(metadata["sources"][""].isMember("license"));
+	BOOST_CHECK_EQUAL(metadata["sources"][""]["license"].asString(), "GPL-3.0");
+}
+
+BOOST_AUTO_TEST_CASE(metadata_license_gpl3_or_apache2)
+{
+	CompilerStack compilerStack;
+	char const* sourceCode = R"(
+		// SPDX-License-Identifier: GPL-3.0 OR Apache-2.0
+		pragma solidity >=0.0;
+		contract C {
+		}
+	)";
+	compilerStack.setSources({{"", std::string(sourceCode)}});
+	BOOST_REQUIRE_MESSAGE(compilerStack.compile(), "Compiling contract failed");
+
+	std::string const& serialisedMetadata = compilerStack.metadata("C");
+	BOOST_CHECK(solidity::test::isValidMetadata(serialisedMetadata));
+	Json::Value metadata;
+	BOOST_REQUIRE(util::jsonParseStrict(serialisedMetadata, metadata));
+
+	BOOST_CHECK_EQUAL(metadata["sources"].size(), 1);
+	BOOST_CHECK(metadata["sources"].isMember(""));
+	BOOST_CHECK(metadata["sources"][""].isMember("license"));
+	BOOST_CHECK_EQUAL(metadata["sources"][""]["license"].asString(), "GPL-3.0 OR Apache-2.0");
+}
+
+BOOST_AUTO_TEST_CASE(metadata_license_ignored_unicode)
+{
+	CompilerStack compilerStack;
+	char const* sourceCode = R"(
+		// SPDX-License-Identifier: ⡉⡊⡋⡌⡍⡎⡏⡐⡑⡒
+		pragma solidity >=0.0;
+		contract C {
+		}
+	)";
+	compilerStack.setSources({{"", std::string(sourceCode)}});
+	BOOST_REQUIRE_MESSAGE(compilerStack.compile(), "Compiling contract failed");
+
+	std::string const& serialisedMetadata = compilerStack.metadata("C");
+	BOOST_CHECK(solidity::test::isValidMetadata(serialisedMetadata));
+	Json::Value metadata;
+	BOOST_REQUIRE(util::jsonParseStrict(serialisedMetadata, metadata));
+
+	BOOST_CHECK_EQUAL(metadata["sources"].size(), 1);
+	BOOST_CHECK(metadata["sources"].isMember(""));
+	BOOST_CHECK(!metadata["sources"][""].isMember("license"));
+}
+
+BOOST_AUTO_TEST_CASE(metadata_license_ignored_stray_unicode)
+{
+	CompilerStack compilerStack;
+	char const* sourceCode = R"(
+		// SPDX-License-Identifier: GPL-3.0 ⡉⡊⡋⡌⡍⡎⡏⡐⡑⡒
+		pragma solidity >=0.0;
+		contract C {
+		}
+	)";
+	compilerStack.setSources({{"", std::string(sourceCode)}});
+	BOOST_REQUIRE_MESSAGE(compilerStack.compile(), "Compiling contract failed");
+
+	std::string const& serialisedMetadata = compilerStack.metadata("C");
+	BOOST_CHECK(solidity::test::isValidMetadata(serialisedMetadata));
+	Json::Value metadata;
+	BOOST_REQUIRE(util::jsonParseStrict(serialisedMetadata, metadata));
+
+	BOOST_CHECK_EQUAL(metadata["sources"].size(), 1);
+	BOOST_CHECK(metadata["sources"].isMember(""));
+	BOOST_CHECK(metadata["sources"][""].isMember("license"));
+	BOOST_CHECK_EQUAL(metadata["sources"][""]["license"].asString(), "GPL-3.0");
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 }
