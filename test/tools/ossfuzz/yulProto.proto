@@ -457,6 +457,7 @@ message Program {
     Object obj = 2;
   }
   required Version ver = 3;
+  required OptimizerStep step = 4;
 }
 
 package solidity.yul.test.yul_fuzzer;

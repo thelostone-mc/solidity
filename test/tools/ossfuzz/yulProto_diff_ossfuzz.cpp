@@ -21,6 +21,9 @@
 #include <test/tools/ossfuzz/yulProto.pb.h>
 #include <test/tools/fuzzer_common.h>
 #include <test/tools/ossfuzz/protoToYul.h>
+
+#include <test/libyul/YulOptimizerTestCommon.h>
+
 #include <src/libfuzzer/libfuzzer_macro.h>
 
 #include <libyul/AssemblyStack.h>
@@ -59,6 +62,7 @@ DEFINE_PROTO_FUZZER(Program const& _input)
 	ProtoConverter converter;
 	string yul_source = converter.programToString(_input);
 	EVMVersion version = converter.version();
+	string optStep = converter.optStepToString(_input.step());
 
 	if (const char* dump_path = getenv("PROTO_FUZZER_DUMP_PATH"))
 	{
@@ -104,10 +108,17 @@ DEFINE_PROTO_FUZZER(Program const& _input)
 	)
 		return;
 
-	stack.optimize();
+	YulOptimizerTester optimizerTest(
+		stack.parserResult(),
+		EVMDialect::strictAssemblyForEVMObjects(version),
+		optStep,
+		true
+	);
+	shared_ptr<solidity::yul::Block> astBlock = optimizerTest.run();
+	yulAssert(astBlock != nullptr, "Optimiser error.");
 	termReason = yulFuzzerUtil::interpret(
 		os2,
-		stack.parserResult()->code,
+		astBlock,
 		EVMDialect::strictAssemblyForEVMObjects(version)
 	);
 	if (

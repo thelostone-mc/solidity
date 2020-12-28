@@ -65,6 +65,9 @@ public:
 		return m_evmVersion;
 	}
 
+	/// Returns string representation of chosen
+	/// optimisation step.
+	std::string optStepToString(Program_OptimizerStep const& _x);
 private:
 	void visit(BinaryOp const&);
 
