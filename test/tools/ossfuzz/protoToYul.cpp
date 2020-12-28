@@ -1985,8 +1985,6 @@ string ProtoConverter::optStepToString(Program_OptimizerStep const& _x)
 		return "fakeStackLimitEvader";
 	case Program_OptimizerStep_STACKLIMITEVADER:
 		return "stackLimitEvader";
-	case Program_OptimizerStep_REASONINGBASEDSIMPLIFIER:
-		return "reasoningBasedSimplifier";
 	case Program_OptimizerStep_UNUSEDFUNCTIONPARAMPRUNER:
 		return "unusedFunctionParameterPruner";
 	default:

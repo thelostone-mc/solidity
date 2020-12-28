@@ -449,8 +449,8 @@ message Program {
     STACKCOMPRESSION = 35;
     FAKESTACKLIMITEVADER = 36;
     STACKLIMITEVADER = 37;
-    REASONINGBASEDSIMPLIFIER = 38;
-    UNUSEDFUNCTIONPARAMPRUNER = 39;
+    // TODO: Add reasoning based simplifier step
+    UNUSEDFUNCTIONPARAMPRUNER = 38;
   }
   oneof program_oneof {
     Block block = 1;
