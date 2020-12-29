@@ -36,10 +36,16 @@ Whiskers::Whiskers(string _template):
 {
 }
 
+void Whiskers::setTemplate(string _template)
+{
+	m_template = move(_template);
+}
+
 Whiskers& Whiskers::operator()(string _parameter, string _value)
 {
 	checkParameterValid(_parameter);
 	checkParameterUnknown(_parameter);
+	checkTemplateContainsTags(_parameter, {""});
 	m_parameters[move(_parameter)] = move(_value);
 	return *this;
 }
@@ -48,6 +54,7 @@ Whiskers& Whiskers::operator()(string _parameter, bool _value)
 {
 	checkParameterValid(_parameter);
 	checkParameterUnknown(_parameter);
+	checkTemplateContainsTags(_parameter, {"?", "/"});
 	m_conditions[move(_parameter)] = _value;
 	return *this;
 }
@@ -59,6 +66,7 @@ Whiskers& Whiskers::operator()(
 {
 	checkParameterValid(_listParameter);
 	checkParameterUnknown(_listParameter);
+	checkTemplateContainsTags(_listParameter, {"#", "/"});
 	for (auto const& element: _values)
 		for (auto const& val: element)
 			checkParameterValid(val.first);
@@ -98,6 +106,19 @@ void Whiskers::checkParameterUnknown(string const& _parameter) const
 		WhiskersError,
 		_parameter + " already set as list parameter."
 	);
+}
+
+void Whiskers::checkTemplateContainsTags(string const& _parameter, vector<string> const& _tags)
+{
+	for (auto const& aTag: _tags)
+	{
+		string tag{"<" + aTag};
+		tag += _parameter + ">";
+		assertThrow(
+			m_template.find(tag) != string::npos,
+			WhiskersError,
+			"Tag '" + tag + "' not found in template:\n" + m_template);
+	}
 }
 
 namespace

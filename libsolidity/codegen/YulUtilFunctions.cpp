@@ -914,7 +914,6 @@ string YulUtilFunctions::overflowCheckedUnsignedExpFunction()
 			("functionName", functionName)
 			("panic", panicFunction(PanicCode::UnderOverflow))
 			("expLoop", overflowCheckedExpLoopFunction())
-			("shr_1", shiftRightFunction(1))
 			.render();
 	});
 }
@@ -1281,8 +1280,6 @@ string YulUtilFunctions::byteArrayTransitLongToShortFunction(ArrayType const& _t
 			("functionName", functionName)
 			("dataPosition", arrayDataAreaFunction(_type))
 			("extractUsedApplyLen", shortByteArrayEncodeUsedAreaSetLengthFunction())
-			("shl", shiftLeftFunctionDynamic())
-			("ones", formatNumber((bigint(1) << 256) - 1))
 			.render();
 	});
 }
@@ -1375,7 +1372,6 @@ string YulUtilFunctions::storageByteArrayPopFunction(ArrayType const& _type)
 			("encodeUsedSetLen", shortByteArrayEncodeUsedAreaSetLengthFunction())
 			("indexAccess", storageArrayIndexAccessFunction(_type))
 			("setToZero", storageSetToZeroFunction(*_type.baseType()))
-			("shl", shiftLeftFunctionDynamic())
 			.render();
 	});
 }
@@ -1438,7 +1434,6 @@ string YulUtilFunctions::storageArrayPushFunction(ArrayType const& _type)
 			("storeValue", updateStorageValueFunction(*_type.baseType(), *_type.baseType()))
 			("maxArrayLength", (u256(1) << 64).str())
 			("shl", shiftLeftFunctionDynamic())
-			("shr", shiftRightFunction(248))
 			.render();
 	});
 }
@@ -1604,7 +1599,6 @@ string YulUtilFunctions::clearStorageStructFunction(StructType const& _type)
 			}
 		)")
 		("functionName", functionName)
-		("storageSize", _type.storageSize().str())
 		("member", memberSetValues)
 		.render();
 	});
@@ -1688,7 +1682,6 @@ string YulUtilFunctions::copyArrayToStorageFunction(ArrayType const& _fromType, 
 		templ("srcDataLocation", arrayDataAreaFunction(_fromType));
 		if (fromCalldata)
 		{
-			templ("dynamicallySizedBase", _fromType.baseType()->isDynamicallySized());
 			templ("dynamicallyEncodedBase", _fromType.baseType()->isDynamicallyEncoded());
 			if (_fromType.baseType()->isDynamicallyEncoded())
 				templ("accessCalldataTail", accessCalldataTailFunction(*_fromType.baseType()));
@@ -2651,7 +2644,6 @@ string YulUtilFunctions::updateStorageValueFunction(
 						solAssert(srcOffset == 0, "");
 
 				}
-				t("memberStorageSlotOffset", to_string(offset));
 				t("updateStorageValue", updateStorageValueFunction(
 					memberType,
 					*toStructMembers[i].type,

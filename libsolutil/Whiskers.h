@@ -73,7 +73,8 @@ public:
 	using StringMap = std::map<std::string, std::string>;
 	using StringListMap = std::map<std::string, std::vector<StringMap>>;
 
-	explicit Whiskers(std::string _template);
+	explicit Whiskers(std::string _template = "");
+	void setTemplate(std::string _template);
 
 	/// Sets a single regular parameter, <paramName>.
 	Whiskers& operator()(std::string _parameter, std::string _value);
@@ -93,6 +94,12 @@ private:
 	Whiskers& operator()(std::string _parameter, long long);
 	void checkParameterValid(std::string const& _parameter) const;
 	void checkParameterUnknown(std::string const& _parameter) const;
+
+	/// Checks whether the string stored in `m_template` contains specific tags.
+	/// @param _parameter name of the parameter. This name is used to construct the tag(s).
+	/// @param _tags a vector of string, where each element is used to compose the tag
+	///        like `"<" + element + _parameter + ">"`. Each element of _tags is used as a prefix of the tag name.
+	void checkTemplateContainsTags(std::string const& _parameter, std::vector<std::string> const& _tags);
 
 	static std::string replace(
 		std::string const& _template,
