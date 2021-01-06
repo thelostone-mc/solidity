@@ -177,10 +177,12 @@ set(yul_phaser_sources
 )
 detect_stray_source_files("${yul_phaser_sources}" "yulPhaser/")
 
-set(lsp_sources
-    lsp/VFS_test.cpp
-)
-detect_stray_source_files("${lsp_sources}" "lsp/")
+if(SOLIDITY_LANGUAGE_SERVER)
+	set(lsp_sources
+		lsp/VFS_test.cpp
+	)
+	detect_stray_source_files("${lsp_sources}" "lsp/")
+endif()
 
 add_executable(soltest ${sources}
     ${contracts_sources}
@@ -194,6 +196,10 @@ add_executable(soltest ${sources}
     ${lsp_sources}
 )
 target_link_libraries(soltest PRIVATE libsolc yul solidity smtutil solutil lsp Boost::boost yulInterpreter evmasm Boost::filesystem Boost::program_options Boost::unit_test_framework evmc)
+
+if(SOLIDITY_LANGUAGE_SERVER)
+	target_link_libraries(soltest PRIVATE lsp)
+endif()
 
 
 # Special compilation flag for Visual Studio (version 2019 at least affected)

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <lsp/protocol.h>
+#include <liblsp/protocol.h>
 #include <string>
 
 namespace lsp {

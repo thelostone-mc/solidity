@@ -1,5 +1,5 @@
-#include <lsp/Transport.h>
-#include <lsp/MessageParser.h>
+#include <liblsp/Transport.h>
+#include <liblsp/MessageParser.h>
 
 #include <libsolutil/Visitor.h>
 

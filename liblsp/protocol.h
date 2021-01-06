@@ -1,6 +1,6 @@
 #pragma once
 
-#include <lsp/Range.h>
+#include <liblsp/Range.h>
 
 #include <json/value.h>
 

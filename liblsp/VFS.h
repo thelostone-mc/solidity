@@ -1,7 +1,7 @@
 #pragma once
 
-#include <lsp/Range.h>
-#include <lsp/TextBuffer.h>
+#include <liblsp/Range.h>
+#include <liblsp/TextBuffer.h>
 
 #include <deque>
 #include <map>

@@ -1,6 +1,6 @@
-#include <lsp/Server.h>
-#include <lsp/OutputGenerator.h>
-#include <lsp/Transport.h>
+#include <liblsp/Server.h>
+#include <liblsp/OutputGenerator.h>
+#include <liblsp/Transport.h>
 
 #include <libsolutil/Visitor.h>
 #include <libsolutil/JSON.h>

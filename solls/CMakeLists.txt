@@ -1,5 +1,3 @@
-add_subdirectory(lsp)
-
 add_executable(solls
 	LanguageServer.cpp LanguageServer.h
 	main.cpp

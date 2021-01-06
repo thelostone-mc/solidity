@@ -1,9 +1,9 @@
 #pragma once
 
-#include <lsp/Server.h>
-#include <lsp/protocol.h>
-#include <lsp/VFS.h>
-#include <lsp/protocol.h>
+#include <liblsp/Server.h>
+#include <liblsp/protocol.h>
+#include <liblsp/VFS.h>
+#include <liblsp/protocol.h>
 
 #include <libsolidity/interface/CompilerStack.h>
 #include <libsolidity/interface/ReadFile.h>

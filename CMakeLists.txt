@@ -103,6 +103,7 @@ if (NOT EMSCRIPTEN)
 endif()
 
 if(SOLIDITY_LANGUAGE_SERVER)
+	add_subdirectory(liblsp)
 	add_subdirectory(solls)
 endif()
 

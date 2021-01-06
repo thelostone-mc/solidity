@@ -1,6 +1,6 @@
 #pragma once
 
-#include <lsp/protocol.h>
+#include <liblsp/protocol.h>
 
 #include <libsolutil/JSON.h>
 

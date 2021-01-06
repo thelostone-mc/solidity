@@ -1,7 +1,7 @@
 #pragma once
 
 #include <libsolutil/JSON.h>
-#include <lsp/protocol.h>
+#include <liblsp/protocol.h>
 
 #include <tuple>
 

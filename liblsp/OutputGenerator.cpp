@@ -1,4 +1,4 @@
-#include <lsp/OutputGenerator.h>
+#include <liblsp/OutputGenerator.h>
 #include <libsolutil/Visitor.h>
 #include <variant>
 

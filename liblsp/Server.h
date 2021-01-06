@@ -1,9 +1,9 @@
 #pragma once
 
-#include <lsp/protocol.h>
-#include <lsp/InputHandler.h>
-#include <lsp/OutputGenerator.h>
-#include <lsp/Logger.h>
+#include <liblsp/protocol.h>
+#include <liblsp/InputHandler.h>
+#include <liblsp/OutputGenerator.h>
+#include <liblsp/Logger.h>
 
 #include <json/value.h>
 

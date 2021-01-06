@@ -1,5 +1,5 @@
-#include <lsp/InputHandler.h>
-#include <lsp/Logger.h>
+#include <liblsp/InputHandler.h>
+#include <liblsp/Logger.h>
 #include <libsolutil/JSON.h>
 
 #include <array>

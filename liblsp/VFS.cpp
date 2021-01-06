@@ -1,4 +1,4 @@
-#include <lsp/VFS.h>
+#include <liblsp/VFS.h>
 
 #include <algorithm>
 #include <deque>

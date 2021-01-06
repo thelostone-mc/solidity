@@ -1,7 +1,7 @@
 #include <solls/LanguageServer.h>
 
-#include <lsp/OutputGenerator.h>
-#include <lsp/protocol.h>
+#include <liblsp/OutputGenerator.h>
+#include <liblsp/protocol.h>
 
 #include <libsolidity/ast/AST.h>
 #include <libsolidity/ast/ASTVisitor.h>

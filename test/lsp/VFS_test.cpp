@@ -18,8 +18,8 @@
  * Unit tests for the address checksum.
  */
 
-#include <lsp/VFS.h>
-#include <lsp/TextBuffer.h>
+#include <liblsp/VFS.h>
+#include <liblsp/TextBuffer.h>
 #include <libsolutil/Exceptions.h>
 
 #include <test/Common.h>
