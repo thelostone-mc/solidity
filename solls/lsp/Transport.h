@@ -66,7 +66,7 @@ private:
 	std::optional<HeaderMap> parseHeaders();
 
 	/// Reads given number of bytes from the client.
-	std::string readBytes(size_t _n);
+	std::string readBytes(int _n);
 
 private:
 	std::istream& m_input;

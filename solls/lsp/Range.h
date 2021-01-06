@@ -12,8 +12,8 @@ namespace lsp {
  */
 struct Position
 {
-	unsigned line;    // zero-based index to the line
-	unsigned column;  // zero-based index to the column
+	int line;    // zero-based index to the line
+	int column;  // zero-based index to the column
 };
 
 constexpr bool operator==(Position const& a, Position const& b) noexcept
@@ -44,13 +44,13 @@ struct Range
 	Position end;
 
 	struct LineNumIterator {
-		unsigned current;
-		unsigned lastLine;
+		int current;
+		int lastLine;
 
 		/// Determines whether or not this is an inner line or a boundary line (first/last).
 		bool inner = false;
 
-		constexpr unsigned operator*() const noexcept { return current; }
+		constexpr int operator*() const noexcept { return current; }
 
 		constexpr LineNumIterator& operator++() noexcept
 		{

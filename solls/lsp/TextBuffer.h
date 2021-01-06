@@ -38,7 +38,7 @@ public:
 	std::string_view at(Range const& _range) const
 	{
 		auto const [start, end] = offsetsOf(_range);
-		return std::string_view(&*std::next(std::begin(m_buffer), start), end - start);
+		return std::string_view(&*std::next(std::begin(m_buffer), static_cast<int>(start)), end - start);
 	}
 
 	Position toPosition(size_t _offset) const noexcept;

@@ -26,7 +26,7 @@ variant<std::string, ErrorCode> parseMessage(istream& _input)
 	};
 
 	// Reads given number of bytes from input stream.
-	auto const readBytes = [&](int _n) {
+	auto const readBytes = [&](size_t _n) {
 		string data;
 		data.resize(_n);
 		_input.read(data.data(), streamsize(_n));
@@ -58,7 +58,7 @@ variant<std::string, ErrorCode> parseMessage(istream& _input)
 	if (!get<HeaderMap>(headers).count("content-length"))
 		return {ErrorCode::TransportProtocolError};
 
-	size_t const contentLength = stoi(get<HeaderMap>(headers).at("content-length"));
+	size_t const contentLength = static_cast<size_t>(max(0, stoi(get<HeaderMap>(headers).at("content-length"))));
 	string const data = readBytes(contentLength);
 
 	return {data};

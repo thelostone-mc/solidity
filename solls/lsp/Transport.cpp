@@ -27,8 +27,7 @@ optional<Json::Value> JSONTransport::receive()
 	if (!headers->count("content-length"))
 		return nullopt;
 
-	size_t const contentLength = stoi(headers->at("content-length"));
-	string const data = readBytes(contentLength);
+	string const data = readBytes(stoi(headers->at("content-length")));
 
 	Json::Value jsonMessage;
 	string errs;
@@ -115,10 +114,13 @@ optional<JSONTransport::HeaderMap> JSONTransport::parseHeaders()
 	return {headers};
 }
 
-string JSONTransport::readBytes(size_t _n)
+string JSONTransport::readBytes(int _n)
 {
+	if (_n < 0)
+		return {};
+
 	string data;
-	data.resize(_n);
+	data.resize(static_cast<string::size_type>(_n));
 	m_input.read(data.data(), _n);
 	return data;
 }

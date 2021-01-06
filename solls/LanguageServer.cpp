@@ -179,11 +179,12 @@ constexpr lsp::protocol::DiagnosticSeverity toDiagnosticSeverity(Error::Type _er
 {
 	switch (_errorType)
 	{
+		case Error::Type::CodeGenerationError:
 		case Error::Type::DeclarationError:
 		case Error::Type::DocstringParsingError:
 		case Error::Type::ParserError:
-		case Error::Type::TypeError:
 		case Error::Type::SyntaxError:
+		case Error::Type::TypeError:
 			return lsp::protocol::DiagnosticSeverity::Error;
 		case Error::Type::Warning:
 			return lsp::protocol::DiagnosticSeverity::Warning;
@@ -300,7 +301,7 @@ frontend::ASTNode const* LanguageServer::findASTNode(lsp::Position const& _posit
 	m_compilerStack->ast(_fileName);
 	frontend::ASTNode const& sourceUnit = m_compilerStack->ast(_fileName);
 	ASTNodeLocator m{_position};
-	m.visit(sourceUnit);
+	sourceUnit.accept(m);
 
 	return nullptr;
 }

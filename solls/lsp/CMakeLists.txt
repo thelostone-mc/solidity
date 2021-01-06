@@ -6,8 +6,10 @@ add_library(lsp
 	TextBuffer.h
 	Transport.h Transport.cpp
 	VFS.h VFS.cpp
+	Range.h
 	protocol.h
 )
 
 target_link_libraries(lsp PUBLIC jsoncpp solutil)
 target_include_directories(lsp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
+target_include_directories(lsp PRIVATE "${CMAKE_PROJECT_ROOT}/solls")

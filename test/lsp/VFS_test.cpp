@@ -26,16 +26,16 @@
 
 #include <boost/test/unit_test.hpp>
 
-namespace std {
-	ostream& operator<<(ostream& _os, lsp::vfs::TextLines const& _lines)
-	{
-		_os << '{';
-		for (size_t i = 0; i < _lines.size(); ++i)
-			_os << (i ? ", " : "") << '"' << _lines[i] << '"';
-		_os << '}';
-		return _os;
-	}
-}
+// namespace std {
+// 	ostream& operator<<(ostream& _os, lsp::vfs::TextLines const& _lines)
+// 	{
+// 		_os << '{';
+// 		for (size_t i = 0; i < _lines.size(); ++i)
+// 			_os << (i ? ", " : "") << '"' << _lines[i] << '"';
+// 		_os << '}';
+// 		return _os;
+// 	}
+// }
 
 using namespace std;
 
