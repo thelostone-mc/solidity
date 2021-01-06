@@ -25,8 +25,6 @@ private:
 	Server& operator=(Server const&) = delete;
 
 public:
-	using Id = protocol::Id;
-
 	/// Constructs a Language Server that is communicating over stdio via JSON-RPC.
 	///
 	/// @param _client the transport layer to the connected client
@@ -62,14 +60,14 @@ public:
 	///
 	/// @param _id an optional request ID that this response relates to
 	/// @param _message the message to send to the client
-	void reply(lsp::protocol::Id const& _id, lsp::protocol::Response const& _message);
-	void error(lsp::protocol::Id const& _id, lsp::protocol::ErrorCode, std::string const& _message);
+	void reply(lsp::MessageId const& _id, lsp::protocol::Response const& _message);
+	void error(lsp::MessageId const& _id, lsp::protocol::ErrorCode, std::string const& _message);
 	void notify(lsp::protocol::Notification const& _message);
 
 	void log(protocol::MessageType _type, std::string const& _message) override;
 
 protected:
-	[[deprecated]] void sendReply(Json::Value const& _response, std::optional<Id> _requestId = std::nullopt);
+	[[deprecated]] void sendReply(Json::Value const& _response, std::optional<MessageId> _requestId = std::nullopt);
 
 	Transport& client() noexcept { return m_client; }
 

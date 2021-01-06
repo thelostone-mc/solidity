@@ -30,10 +30,10 @@ public:
 	virtual void notify(std::string const& _method, Json::Value const& _params) = 0;
 
 	/// Sends a reply message, optionally with a given ID to correlate this message to another from the other end.
-	virtual void reply(protocol::Id const& _id, Json::Value const& _result) = 0;
+	virtual void reply(MessageId const& _id, Json::Value const& _result) = 0;
 
 	/// Sends an error reply with regards to the given request ID.
-	virtual void error(protocol::Id const& _id, protocol::ErrorCode _code, std::string const& _message) = 0;
+	virtual void error(MessageId const& _id, protocol::ErrorCode _code, std::string const& _message) = 0;
 };
 
 /// Standard stdio style JSON-RPC stream transport.
@@ -48,8 +48,8 @@ public:
 
 	std::optional<Json::Value> receive() override;
 	void notify(std::string const& _method, Json::Value const& _params) override;
-	void reply(protocol::Id const& _id, Json::Value const& _result) override;
-	void error(protocol::Id const& _id, protocol::ErrorCode _code, std::string const& _message) override;
+	void reply(MessageId const& _id, Json::Value const& _result) override;
+	void error(MessageId const& _id, protocol::ErrorCode _code, std::string const& _message) override;
 
 private:
 	using HeaderMap = std::unordered_map<std::string, std::string>;

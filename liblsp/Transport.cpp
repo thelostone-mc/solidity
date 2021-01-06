@@ -47,7 +47,7 @@ void JSONTransport::notify(string const& _method, Json::Value const& _message)
 	send(json);
 }
 
-void JSONTransport::reply(protocol::Id const& _id, Json::Value const& _message)
+void JSONTransport::reply(MessageId const& _id, Json::Value const& _message)
 {
 	Json::Value json;
 	json["jsonrpc"] = "2.0";
@@ -60,7 +60,7 @@ void JSONTransport::reply(protocol::Id const& _id, Json::Value const& _message)
 	send(json);
 }
 
-void JSONTransport::error(protocol::Id const& _id, protocol::ErrorCode _code, string const& _message)
+void JSONTransport::error(MessageId const& _id, protocol::ErrorCode _code, string const& _message)
 {
 	Json::Value json;
 	json["jsonrpc"] = "2.0";

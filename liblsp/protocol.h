@@ -14,9 +14,11 @@
 
 // NOTE: https://microsoft.github.io/language-server-protocol/specifications/specification-3-14/
 
-namespace lsp::protocol {
+namespace lsp {
+	using MessageId = std::variant<int, std::string>;
+}
 
-using Id = std::variant<int, std::string>;
+namespace lsp::protocol {
 
 using DocumentUri = std::string; // such as "file:///path/to"
 
@@ -77,7 +79,7 @@ struct WorkspaceFolder {
 
 /// The initialize request is sent as the first request from the client to the server.
 struct InitializeRequest {
-	Id requestId;
+	MessageId requestId;
 
 	std::optional<int> processId;
 	std::optional<std::string> rootPath;
@@ -224,7 +226,7 @@ struct ServerInfo {
 };
 
 struct InitializeResult {
-	Id requestId;
+	MessageId requestId;
 	ServerCapabilities capabilities;
 	std::optional<ServerInfo> serverInfo;
 };
@@ -793,7 +795,7 @@ struct MarkupContent {
  * the new text is considered to be the full content of the document.
  */
 struct TextDocumentRangedContentChangeEvent {
-	Id requestId;
+	MessageId requestId;
 
 	/**
 	 * The range of the document that changed.
@@ -814,7 +816,7 @@ struct TextDocumentRangedContentChangeEvent {
 };
 
 struct TextDocumentFullContentChangeEvent {
-	Id requestId;
+	MessageId requestId;
 
 	/**
 	 * The new text of the whole document.
@@ -830,7 +832,7 @@ using TextDocumentContentChangeEvent = std::variant<
 // -----------------------------------------------------------------------------------------------
 
 struct DidOpenTextDocumentParams {
-	Id requestId;
+	MessageId requestId;
 
 	/**
 	 * The document that was opened.
@@ -848,7 +850,7 @@ struct DidOpenTextDocumentParams {
  * independent of whether a text document is open or closed.
  */
 struct DidCloseTextDocumentParams {
-	Id requestId;
+	MessageId requestId;
 
 	/**
 	 * The document that was closed.
@@ -857,7 +859,7 @@ struct DidCloseTextDocumentParams {
 };
 
 struct DidChangeTextDocumentParams {
-	Id requestId;
+	MessageId requestId;
 
 	/**
 	 * The document that did change. The version number points
@@ -907,7 +909,7 @@ struct ExitParams {};
 /// The server MUST respond with an ErrorCode::InvalidRequest.
 struct InvalidRequest
 {
-	Id requestId;
+	MessageId requestId;
 	std::string methodName;
 };
 
@@ -954,7 +956,7 @@ struct RegistrationParams {
 
 // used for request and response
 struct DefinitionParams : TextDocumentPositionParams {
-	Id requestId;
+	MessageId requestId;
 };
 
 struct DefinitionReplyParams {
@@ -966,7 +968,7 @@ struct DefinitionReplyParams {
 
 /// Message for cancelling a request. This can be sent in both directions.
 struct CancelRequest {
-	Id id;
+	MessageId id;
 };
 
 using Request = std::variant<

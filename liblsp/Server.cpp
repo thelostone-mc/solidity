@@ -76,18 +76,18 @@ void Server::handleMessage(string const& _message)
 		logError("Could not analyze RPC request.");
 }
 
-void Server::reply(lsp::protocol::Id const& _id, lsp::protocol::Response const& _message)
+void Server::reply(MessageId const& _id, protocol::Response const& _message)
 {
 	auto const json = m_outputGenerator(_message);
 	m_client.reply(_id, json);
 }
 
-void Server::error(lsp::protocol::Id const& _id, lsp::protocol::ErrorCode _code, string  const& _message)
+void Server::error(MessageId const& _id, protocol::ErrorCode _code, string  const& _message)
 {
 	m_client.error(_id, _code, _message);
 }
 
-void Server::notify(lsp::protocol::Notification const& _message)
+void Server::notify(protocol::Notification const& _message)
 {
 	auto const [method, json] = m_outputGenerator(_message);
 	m_client.notify(method, json);

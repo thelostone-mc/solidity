@@ -29,11 +29,11 @@ optional<Request> InputHandler::handleRequest(Json::Value const& _jsonMessage)
 {
 	string const methodName = _jsonMessage["method"].asString();
 
-	Id const id = _jsonMessage["id"].isInt()
-		? Id{_jsonMessage["id"].asInt()}
+	MessageId const id = _jsonMessage["id"].isInt()
+		? MessageId{_jsonMessage["id"].asInt()}
 		: _jsonMessage["id"].isString()
-			? Id{_jsonMessage["id"].asString()}
-			: Id{};
+			? MessageId{_jsonMessage["id"].asString()}
+			: MessageId{};
 
 	if (m_shutdownRequested && methodName != "exit")
 	{
@@ -54,7 +54,7 @@ optional<Request> InputHandler::handleRequest(Json::Value const& _jsonMessage)
 	return nullopt;
 }
 
-optional<CancelRequest> InputHandler::cancelRequest(Id const&, Json::Value const& _message)
+optional<CancelRequest> InputHandler::cancelRequest(MessageId const&, Json::Value const& _message)
 {
 	if (Json::Value id = _message["id"]; id.isInt())
 		return CancelRequest{id.asInt()};
@@ -64,18 +64,18 @@ optional<CancelRequest> InputHandler::cancelRequest(Id const&, Json::Value const
 		return nullopt;
 }
 
-optional<ShutdownParams> InputHandler::shutdown(Id const&, Json::Value const&)
+optional<ShutdownParams> InputHandler::shutdown(MessageId const&, Json::Value const&)
 {
 	m_shutdownRequested = true;
 	return ShutdownParams{};
 }
 
-optional<ExitParams> InputHandler::exit(Id const&, Json::Value const&)
+optional<ExitParams> InputHandler::exit(MessageId const&, Json::Value const&)
 {
 	return ExitParams{};
 }
 
-optional<InitializeRequest> InputHandler::initializeRequest(Id const& _id, Json::Value const& _args)
+optional<InitializeRequest> InputHandler::initializeRequest(MessageId const& _id, Json::Value const& _args)
 {
 	lsp::protocol::InitializeRequest request{};
 	request.requestId = _id;
@@ -117,13 +117,13 @@ optional<InitializeRequest> InputHandler::initializeRequest(Id const& _id, Json:
 	return request;
 }
 
-optional<protocol::InitializedNotification> InputHandler::initialized(Id const&, Json::Value const&)
+optional<protocol::InitializedNotification> InputHandler::initialized(MessageId const&, Json::Value const&)
 {
 	// TODO: error checking?
 	return InitializedNotification{};
 }
 
-optional<DidOpenTextDocumentParams> InputHandler::textDocument_didOpen(Id const& _id, Json::Value const& _args)
+optional<DidOpenTextDocumentParams> InputHandler::textDocument_didOpen(MessageId const& _id, Json::Value const& _args)
 {
 	if (!_args["textDocument"])
 		return nullopt;
@@ -138,7 +138,7 @@ optional<DidOpenTextDocumentParams> InputHandler::textDocument_didOpen(Id const&
 	return args;
 }
 
-optional<protocol::DidChangeTextDocumentParams> InputHandler::textDocument_didChange(Id const& _id, Json::Value const& _json)
+optional<protocol::DidChangeTextDocumentParams> InputHandler::textDocument_didChange(MessageId const& _id, Json::Value const& _json)
 {
 	DidChangeTextDocumentParams didChange{};
 	didChange.requestId = _id;
@@ -170,7 +170,7 @@ optional<protocol::DidChangeTextDocumentParams> InputHandler::textDocument_didCh
 	return didChange;
 }
 
-optional<protocol::DidCloseTextDocumentParams> InputHandler::textDocument_didClose(Id const& _id, Json::Value const& _json)
+optional<protocol::DidCloseTextDocumentParams> InputHandler::textDocument_didClose(MessageId const& _id, Json::Value const& _json)
 {
 	protocol::DidCloseTextDocumentParams didClose;
 	didClose.requestId = _id;
@@ -178,7 +178,7 @@ optional<protocol::DidCloseTextDocumentParams> InputHandler::textDocument_didClo
 	return didClose;
 }
 
-std::optional<protocol::DefinitionParams> InputHandler::textDocument_definition(Id const& _id, Json::Value const& _json)
+std::optional<protocol::DefinitionParams> InputHandler::textDocument_definition(MessageId const& _id, Json::Value const& _json)
 {
 	protocol::DefinitionParams params;
 	params.requestId = _id;
