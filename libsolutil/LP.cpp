@@ -364,12 +364,28 @@ pair<LPResult, vector<rational>> simplex(Tableau _tableau)
 
 }
 
+void LPSolver::reset()
+{
+	m_state = stack<State>{{State{}}};
+}
+
+void LPSolver::push()
+{
+	m_state.push(m_state.top());
+}
+
+void LPSolver::pop()
+{
+	m_state.pop();
+	solAssert(!m_state.empty(), "");
+}
+
 void LPSolver::declareVariable(string const& _name, SortPointer const& _sort)
 {
 	solAssert(_sort && _sort->kind == Kind::Int, "");
-	solAssert(!m_variables.count(_name), "");
-	size_t index = m_variables.size() + 1;
-	m_variables[_name] = index;
+	solAssert(!m_state.top().variables.count(_name), "");
+	size_t index = m_state.top().variables.size() + 1;
+	m_state.top().variables[_name] = index;
 }
 
 void LPSolver::addAssertion(Expression const& _expr)
@@ -385,19 +401,14 @@ void LPSolver::addAssertion(Expression const& _expr)
 			parseLinearSum(_expr.arguments.at(0)) -
 			parseLinearSum(_expr.arguments.at(1));
 		constraint[0] *= -1;
-		cout << "Constraint: ";
-		printVector(constraint);
-		m_constraints.emplace_back(move(constraint));
+		m_state.top().constraints.emplace_back(move(constraint));
 	}
 	else if (_expr.name == ">=")
+		addAssertion(_expr.arguments.at(1) <= _expr.arguments.at(0));
+	else if (_expr.name == "=")
 	{
-		vector<rational> constraint =
-			parseLinearSum(_expr.arguments.at(1)) -
-			parseLinearSum(_expr.arguments.at(0));
-		constraint[0] *= -1;
-		cout << "Constraint: ";
-		printVector(constraint);
-		m_constraints.emplace_back(move(constraint));
+		addAssertion(_expr.arguments.at(0) <= _expr.arguments.at(1));
+		addAssertion(_expr.arguments.at(1) <= _expr.arguments.at(0));
 	}
 	else
 		solAssert(false, "Invalid operation: " + _expr.name);
@@ -406,7 +417,7 @@ void LPSolver::addAssertion(Expression const& _expr)
 
 pair<CheckResult, vector<string>> LPSolver::check(vector<Expression> const& _expressionsToEvaluate)
 {
-	vector<vector<rational>> constraints = m_constraints;
+	vector<vector<rational>> constraints = m_state.top().constraints;
 	size_t numColumns = 0;
 	for (auto const& row: constraints)
 		numColumns = max(numColumns, row.size());
@@ -436,9 +447,9 @@ pair<CheckResult, vector<string>> LPSolver::check(vector<Expression> const& _exp
 	vector<string> model;
 	for (Expression const& e: _expressionsToEvaluate)
 	{
-		if (e.arguments.empty() && m_variables.count(e.name))
+		if (e.arguments.empty() && m_state.top().variables.count(e.name))
 		{
-			size_t index = m_variables.at(e.name);
+			size_t index = m_state.top().variables.at(e.name);
 			solAssert(index > 0, "");
 			model.emplace_back(toString(solution.at(index - 1)));
 		}
@@ -488,7 +499,7 @@ vector<rational> LPSolver::parseFactor(smtutil::Expression const& _expr) const
 	else if (_expr.name == "false")
 		return {rational(bigint(0))};
 
-	size_t index = m_variables.at(_expr.name);
+	size_t index = m_state.top().variables.at(_expr.name);
 	solAssert(index > 0, "");
 	vector<rational> result(index + 1);
 	result[index] = rational(bigint(1));

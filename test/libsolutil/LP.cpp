@@ -123,6 +123,38 @@ BOOST_AUTO_TEST_CASE(unbounded_two)
 	feasible({{x, "10"}, {y, "0"}});
 }
 
+BOOST_AUTO_TEST_CASE(equal)
+{
+	Expression x = variable("x");
+	Expression y = variable("y");
+	solver.addAssertion(x == y + 10);
+	solver.addAssertion(x <= 20);
+	feasible({{x, "20"}, {y, "10"}});
+}
+
+BOOST_AUTO_TEST_CASE(push_pop)
+{
+	Expression x = variable("x");
+	Expression y = variable("y");
+	solver.addAssertion(x + y <= 20);
+	feasible({{x, "20"}, {y, "0"}});
+
+	solver.push();
+	solver.addAssertion(x <= 5);
+	solver.addAssertion(y <= 5);
+	feasible({{x, "5"}, {y, "5"}});
+
+	solver.push();
+	solver.addAssertion(x >= 7);
+	infeasible();
+	solver.pop();
+
+	feasible({{x, "5"}, {y, "5"}});
+	solver.pop();
+
+	feasible({{x, "20"}, {y, "0"}});
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
 

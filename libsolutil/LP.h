@@ -25,6 +25,7 @@
 
 #include <vector>
 #include <variant>
+#include <stack>
 
 namespace solidity::util
 {
@@ -32,11 +33,9 @@ namespace solidity::util
 class LPSolver: public smtutil::SolverInterface
 {
 public:
-	// TODO
-	void reset() {}
-
-	void push() {}
-	void pop() {}
+	void reset();
+	void push();
+	void pop();
 
 	void declareVariable(std::string const& _name, smtutil::SortPointer const& _sort) override;
 
@@ -55,8 +54,13 @@ private:
 	std::vector<rational> parseProduct(smtutil::Expression const& _expression) const;
 	std::vector<rational> parseFactor(smtutil::Expression const& _expression) const;
 
-	std::map<std::string, size_t> m_variables;
-	std::vector<std::vector<rational>> m_constraints;
+	struct State
+	{
+		std::map<std::string, size_t> variables;
+		std::vector<std::vector<rational>> constraints;
+	};
+
+	std::stack<State> m_state{{State{}}};
 };
 
 
