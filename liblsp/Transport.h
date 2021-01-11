@@ -41,8 +41,8 @@ public:
 	virtual void error(MessageId const& _id, protocol::ErrorCode _code, std::string const& _message) = 0;
 };
 
-/// Standard stdio style JSON-RPC stream transport.
-class JSONTransport: public Transport // TODO: Should be named: StdioTransport
+/// Standard JSON-RPC stream transport over standard iostream.
+class JSONTransport: public Transport
 {
 public:
 	/// Constructs a standard stream transport layer.
@@ -58,22 +58,22 @@ public:
 	void reply(MessageId const& _id, Json::Value const& _result) override;
 	void error(MessageId const& _id, protocol::ErrorCode _code, std::string const& _message) override;
 
-private:
+protected:
 	using HeaderMap = std::unordered_map<std::string, std::string>;
+
+	/// Reads given number of bytes from the client.
+	virtual std::string readBytes(int _n);
 
 	/// Sends an arbitrary raw message to the client.
 	///
 	/// Used by the notify/reply/error function family.
-	void send(Json::Value const& _message);
+	virtual void send(Json::Value const& _message);
 
 	/// Parses a single text line from the client ending with CRLF (or just LF).
 	std::string readLine();
 
 	/// Parses header section from the client including message-delimiting empty line.
 	std::optional<HeaderMap> parseHeaders();
-
-	/// Reads given number of bytes from the client.
-	std::string readBytes(int _n);
 
 	/// Appends given JSON message to the trace log.
 	void traceMessage(Json::Value const& _message, std::string_view _title);
@@ -85,5 +85,3 @@ private:
 };
 
 } // end namespace
-
-

@@ -65,19 +65,5 @@ struct DocumentFilter {
 /// A document selector is the combination of one or more document filters.
 using DocumentSelector = std::vector<DocumentFilter>;
 
-struct Registration {
-	std::string id; // The id used to register the request. The id can be used to deregister the request again.
-	std::string method; // The method / capability to register for.
-
-	// /**
-	//  * Options necessary for the registration.
-	//  */
-	//registerOptions?: any;
-};
-
-struct RegistrationParams {
-	std::vector<Registration> registrations;
-};
-
 
 }

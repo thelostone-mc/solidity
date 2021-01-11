@@ -1,16 +1,20 @@
 #include <solls/LanguageServer.h>
 #include <liblsp/Transport.h>
+#include <liblsp/TcpTransport.h>
 #include <fstream>
 
 #include <sys/types.h> // TODO: nah, that's only for now. make platform independant before merge.
 #include <unistd.h>
 
 #include <iostream>
+#include <memory>
 
 using namespace std::string_literals;
 
 using std::cin;
+using std::unique_ptr;
 using std::cout;
+using std::make_unique;
 using std::exception;
 using std::fstream;
 using std::string;
@@ -61,14 +65,21 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
 	auto const logPath = "/tmp/solls."s + to_string(getpid());
 	auto debugLogger = DebugLogger(logPath);
 
+	int tcpPort = argc == 2 ? atoi(argv[1]) : 0;
+
 	try
 	{
-		auto transport = lsp::JSONTransport{cin, cout, [&](auto msg) { debugLogger(msg); }};
-		auto languageServer = solidity::LanguageServer{transport, [&](auto msg) { debugLogger(msg); }};
+		unique_ptr<lsp::Transport> transport;
+		if (tcpPort)
+			transport = make_unique<lsp::TcpTransport>(tcpPort, [&](auto msg) { std::cout << msg << '\n'; });
+		else
+			transport = make_unique<lsp::JSONTransport>(cin, cout, [&](auto msg) { debugLogger(msg); });
+
+		auto languageServer = solidity::LanguageServer{*transport, [&](auto msg) { debugLogger(msg); }};
 		return languageServer.run();
 	}
 	catch (exception const& e)
 	{
-		debugLogger("Unhandled exception caught."s + e.what());
+		debugLogger("Unhandled exception caught. "s + e.what());
 	}
 }

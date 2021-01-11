@@ -107,7 +107,7 @@ void Server::log(protocol::MessageType _type, string const& _message)
 	m_client.notify(method, json);
 
 	if (m_logger)
-		m_logger(_message);
+		m_logger(method + ": " + _message);
 }
 
 } // end namespace

@@ -1,3 +1,20 @@
+/*
+	This file is part of solidity.
+
+	solidity is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	solidity is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with solidity.  If not, see <http://www.gnu.org/licenses/>.
+*/
+// SPDX-License-Identifier: GPL-3.0
 #pragma once
 
 #include <liblsp/Range.h>
@@ -5,7 +22,6 @@
 #include <json/value.h>
 
 #include <any>
-#include <array>
 #include <optional>
 #include <map>
 #include <string>
@@ -13,7 +29,9 @@
 #include <vector>
 
 // NOTE: https://microsoft.github.io/language-server-protocol/specifications/specification-3-14/
-
+//
+// This file contains the high level definitions of the underlying transport protocol.
+// It is not meant to include all but only what is necessary for solls.
 namespace lsp {
 	using MessageId = std::variant<int, std::string>;
 }
@@ -69,7 +87,7 @@ struct InitializeRequest {
 	std::optional<int> processId;
 	std::optional<std::string> rootPath;
 	std::optional<DocumentUri> rootUri;
-	std::optional<std::any> initializationOptions; // User provided initialization options.
+	std::map<std::string, std::string> initializationOptions; // User provided initialization options.
 	//TODO: ClientCapabilities capabilities; // The capabilities provided by the client (editor or tool)
 	Trace trace = Trace::Off; // The initial trace setting. If omitted trace is disabled ('off').  // TODO: ^^ should be overridable by the solls CLI param
 	std::vector<WorkspaceFolder> workspaceFolders; // initial configured workspace folders
@@ -398,6 +416,16 @@ struct DefinitionParams : TextDocumentPositionParams {
 struct DefinitionReplyParams {
 	DocumentUri uri;
 	Range range;
+};
+
+struct Registration {
+	std::string id; // The id used to register the request. The id can be used to deregister the request again.
+	std::string method; // The method / capability to register for.
+	//registerOptions?: any; // Options necessary for the registration.
+};
+
+struct RegistrationParams {
+	std::vector<Registration> registrations;
 };
 
 // -----------------------------------------------------------------------------------------------
