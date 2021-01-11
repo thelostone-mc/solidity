@@ -7,9 +7,11 @@
 
 #include <json/value.h>
 
+#include <functional>
 #include <iosfwd>
 #include <optional>
 #include <string>
+#include <string_view>
 
 namespace lsp {
 
@@ -21,6 +23,9 @@ class Transport
 {
 public:
 	virtual ~Transport() = default;
+
+	/// @returns boolean indicating whether or not the underlying (input) stream is closed.
+	virtual bool closed() const noexcept = 0;
 
 	/// Reveives a message
 	virtual std::optional<Json::Value> receive() = 0;
@@ -37,15 +42,17 @@ public:
 };
 
 /// Standard stdio style JSON-RPC stream transport.
-class JSONTransport: public Transport
+class JSONTransport: public Transport // TODO: Should be named: StdioTransport
 {
 public:
 	/// Constructs a standard stream transport layer.
 	///
 	/// @param _in for example std::cin (stdin)
 	/// @param _out for example std::cout (stdout)
-	JSONTransport(std::istream& _in, std::ostream& _out);
+	/// @param _trace special logger used for debugging the LSP messages.
+	JSONTransport(std::istream& _in, std::ostream& _out, std::function<void(std::string_view)> _trace);
 
+	bool closed() const noexcept override;
 	std::optional<Json::Value> receive() override;
 	void notify(std::string const& _method, Json::Value const& _params) override;
 	void reply(MessageId const& _id, Json::Value const& _result) override;
@@ -68,9 +75,13 @@ private:
 	/// Reads given number of bytes from the client.
 	std::string readBytes(int _n);
 
+	/// Appends given JSON message to the trace log.
+	void traceMessage(Json::Value const& _message, std::string_view _title);
+
 private:
 	std::istream& m_input;
 	std::ostream& m_output;
+	std::function<void(std::string_view)> m_trace;
 };
 
 } // end namespace

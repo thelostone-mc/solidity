@@ -7,37 +7,45 @@
 
 #include <functional>
 #include <ostream>
-
-#include <iostream>
+#include <string>
 
 using namespace std;
 using namespace std::placeholders;
+using namespace std::string_literals;
 
 namespace lsp {
 
-Server::Server(Transport& _client):
+Server::Server(Transport& _client, std::function<void(std::string_view)> _logger):
 	m_client{_client},
-	m_inputHandler{*this}
+	m_inputHandler{*this},
+	m_logger{std::move(_logger)}
 {
 }
 
 int Server::run()
 {
-	while (!m_exitRequested)
+	while (!m_exitRequested && !m_client.closed())
 	{
 		// TODO: receive() must return a variant<> to also return on <Transport::TimeoutEvent>,
 		// so that we can perform some idle tasks in the meantime, such as
 		// - lazy validation runs
 		// - check for results of asynchronous runs (in case we want to support threaded background jobs)
 		// Also, EOF should be noted properly as a <Transport::ClosedEvent>.
-		optional<Json::Value> const jsonMessage = client().receive();
+		optional<Json::Value> const jsonMessage = m_client.receive();
 		if (jsonMessage.has_value())
 		{
-			optional<protocol::Request> const message = m_inputHandler.handleRequest(*jsonMessage);
-			if (message.has_value())
-				visit(*this, message.value());
-			else
-				logError("Could not analyze RPC request.");
+			try
+			{
+				optional<protocol::Request> const message = m_inputHandler.handleRequest(*jsonMessage);
+				if (message.has_value())
+					visit(*this, message.value());
+				else
+					logError("Could not analyze RPC request.");
+			}
+			catch (std::exception const& e)
+			{
+				logError("Unhandled exception caught when handling message. "s + e.what());
+			}
 		}
 		else
 			logError("Could not read RPC request.");
@@ -97,6 +105,9 @@ void Server::log(protocol::MessageType _type, string const& _message)
 {
 	auto const [method, json] = m_outputGenerator(protocol::LogMessageParams{_type, _message});
 	m_client.notify(method, json);
+
+	if (m_logger)
+		m_logger(_message);
 }
 
 } // end namespace

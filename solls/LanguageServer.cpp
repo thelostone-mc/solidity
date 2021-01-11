@@ -41,8 +41,8 @@ using namespace solidity::frontend;
 
 namespace solidity {
 
-LanguageServer::LanguageServer(lsp::Transport& _client):
-	lsp::Server(_client),
+LanguageServer::LanguageServer(lsp::Transport& _client, Logger _logger):
+	lsp::Server(_client, std::move(_logger)),
 	m_vfs()
 {
 }

@@ -43,6 +43,18 @@ enum class MessageType {
 	Log = 4,
 };
 
+inline std::string_view to_string(MessageType _type)
+{
+	switch (_type)
+	{
+		case MessageType::Error: return "Error";
+		case MessageType::Warning: return "Warning";
+		case MessageType::Info: return "Info";
+		case MessageType::Log: return "Log";
+		default: return "Unknown";
+	}
+}
+
 /// Known error codes for an `InitializeError`
 struct InitializeError {
 	enum Code {

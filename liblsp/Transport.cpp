@@ -1,3 +1,4 @@
+#include "libsolutil/JSON.h"
 #include <liblsp/Transport.h>
 #include <liblsp/MessageParser.h>
 
@@ -6,16 +7,23 @@
 #include <boost/algorithm/string.hpp>
 
 #include <istream>
+#include <sstream>
 #include <ostream>
 
 using namespace std;
 
 namespace lsp {
 
-JSONTransport::JSONTransport(istream& _in, ostream& _out):
-	m_input{ _in },
-	m_output{ _out }
+JSONTransport::JSONTransport(istream& _in, ostream& _out, std::function<void(std::string_view)> _trace):
+	m_input{_in},
+	m_output{_out},
+	m_trace{std::move(_trace)}
 {
+}
+
+bool JSONTransport::closed() const noexcept
+{
+	return m_input.eof();
 }
 
 optional<Json::Value> JSONTransport::receive()
@@ -34,6 +42,8 @@ optional<Json::Value> JSONTransport::receive()
 	solidity::util::jsonParseStrict(data, jsonMessage, &errs);
 	if (!errs.empty())
 		return nullopt; // JsonParseError
+
+	traceMessage(jsonMessage, "Request");
 
 	return {jsonMessage};
 }
@@ -83,6 +93,20 @@ void JSONTransport::send(Json::Value const& _json)
 	m_output << jsonString;
 
 	m_output.flush();
+	traceMessage(_json, "Response");
+}
+
+void JSONTransport::traceMessage(Json::Value const& _message, std::string_view _title)
+{
+	if (m_trace)
+	{
+		auto const jsonString = solidity::util::jsonPrettyPrint(_message);
+
+		stringstream sstr;
+		sstr << _title << ": " << jsonString;
+
+		m_trace(sstr.str());
+	}
 }
 
 string JSONTransport::readLine()

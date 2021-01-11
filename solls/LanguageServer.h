@@ -32,6 +32,7 @@
 #include <optional>
 #include <ostream>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <variant>
 
@@ -41,9 +42,11 @@ namespace solidity {
 class LanguageServer final: public lsp::Server
 {
 public:
+	using Logger = std::function<void(std::string_view)>;
 	using PublishDiagnosticsList = std::vector<lsp::protocol::PublishDiagnosticsParams>;
 
-	explicit LanguageServer(lsp::Transport& _client);
+	/// @param _logger special logger used for debugging the LSP.
+	explicit LanguageServer(lsp::Transport& _client, Logger _logger);
 
 	int exec();
 

@@ -29,7 +29,7 @@ public:
 	///
 	/// @param _client the transport layer to the connected client
 	/// @param _logger a logging stream, used internally for logging debug/warning/error messages.
-	explicit Server(Transport& _client);
+	explicit Server(Transport& _client, std::function<void(std::string_view)> _logger);
 
 	virtual ~Server() = default;
 
@@ -77,6 +77,7 @@ private:
 	OutputGenerator m_outputGenerator = {};
 	bool m_shutdownRequested = false;
 	bool m_exitRequested = false;
+	std::function<void(std::string_view)> m_logger;
 };
 
 } // namespace solidity
