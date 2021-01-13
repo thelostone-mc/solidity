@@ -18,6 +18,7 @@
 #include <test/libsolidity/util/ContractABIUtils.h>
 
 #include <libsolutil/AnsiColorized.h>
+#include <libsolutil/JSON.h>
 
 #include <boost/algorithm/string/replace.hpp>
 
@@ -32,6 +33,32 @@ using namespace std;
 
 using Token = soltest::Token;
 
+string TestFunctionCall::findEventSignature(solidity::test::ExecutionFramework::log_record const& log) const
+{
+	for (auto& entity: m_contractABI)
+		if (entity["type"].isString() && entity["type"].asString() == "event")
+		{
+			string name{entity["name"].asString()};
+			bool anonymous{entity["anonymous"].asBool()};
+			vector<string> argumentTypes;
+			for (auto& input: entity["inputs"])
+				argumentTypes.emplace_back(input["internalType"].asString());
+			if (!name.empty() && !anonymous)
+			{
+				std::string signature{name};
+				signature += "(";
+				for (auto& arg: argumentTypes)
+					signature += arg + ",";
+				if (!argumentTypes.empty())
+					signature = signature.substr(0, signature.length() - 1);
+				signature += ")";
+				if (!log.topics.empty() && log.topics[0] == util::keccak256(signature))
+					return signature;
+			}
+		}
+	return "";
+}
+
 string TestFunctionCall::format(
 	ErrorReporter& _errorReporter,
 	string const& _linePrefix,
@@ -41,7 +68,7 @@ string TestFunctionCall::format(
 {
 	stringstream stream;
 
-	bool highlight = !matchesExpectation() && _highlight;
+	bool highlight = (!matchesExpectation() || hasUnconsumedLogs()) && _highlight;
 
 	auto formatOutput = [&](bool const _singleLine)
 	{
@@ -93,7 +120,6 @@ string TestFunctionCall::format(
 			if (!m_call.arguments.parameters.at(0).format.newline)
 				stream << ws;
 			stream << output;
-
 		}
 
 		/// Formats comments on the function parameters and the arrow taking
@@ -134,6 +160,23 @@ string TestFunctionCall::format(
 					result += ": ";
 				result += formatRawParameters(builtin->arguments.parameters);
 			}
+			else if (hasUnconsumedLogs())
+			{
+				stringstream str;
+				for (auto& log: unconsumedLogs())
+				{
+					string signature{findEventSignature(log)};
+					str << std::endl
+						<< "  // logs.expectEvent(uint256,string): " << log.index << ", "
+						<< "\"" + signature + "\" -> ";
+					for (auto& topic : log.topics)
+						if ((topic != *log.topics.begin() && !signature.empty()) || signature.empty())
+							str << util::toCompactHexWithPrefix(u256{topic}) << ", ";
+					if (!log.data.empty())
+						str << util::toHex(log.data, HexPrefix::Add);
+				}
+				result += str.str();
+			}
 			else
 			{
 				bool const isFailure = m_call.expectations.failure;
@@ -151,6 +194,13 @@ string TestFunctionCall::format(
 		{
 			if (m_calledNonExistingFunction)
 				_errorReporter.warning("The function \"" + m_call.signature + "\" is not known to the compiler.");
+
+			if (m_consumedLogs.size() != m_rawLogs.size())
+			{
+				stringstream str;
+				str << "The function \"" << m_call.signature << "\" produced " << m_rawLogs.size() <<" log(s), but only " << m_consumedLogs.size() << " log(s) where consumed.";
+				_errorReporter.error(str.str());
+			}
 
 			if (builtin)
 				_errorReporter.warning("The expectation \"" + builtin->signature + ": " + formatRawParameters(builtin->arguments.parameters) + "\" will be replaced with the actual value returned by the test.");
