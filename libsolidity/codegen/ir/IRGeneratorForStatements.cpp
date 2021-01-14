@@ -1125,6 +1125,7 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 					"))\n";
 				IRVariable selectorVariable(m_context.newYulVariable(), *TypeProvider::fixedBytes(4));
 				define(selectorVariable, hashVariable);
+				selector = selectorVariable.name();
 				// This just resets the free memory pointer.
 				m_code << m_utils.finalizeAllocationFunction() << "(" << freeMemoryPre << ", 0)\n";
 			}
