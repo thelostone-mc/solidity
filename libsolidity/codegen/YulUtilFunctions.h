@@ -352,16 +352,25 @@ public:
 
 	/// @returns the name of a function that allocates memory.
 	/// Modifies the "free memory pointer"
-	/// Arguments: size
-	/// Return value: pointer
+	/// signature: (size) -> ptr
 	std::string allocationFunction();
 
-	/// @returns the name of the function that allocates temporary memory with predefined size
+	/// @returns the name of the function that allocates memory whose size will be defined later,
+	/// or it will be released. The allocation can be finalized using finalizeAllocationFunction.
+	/// Any other allocation will invalidate the memory pointer unless finalizeAllocationFunction
+	/// is called.
 	/// Return value: pointer
-	std::string allocationTemporaryMemoryFunction();
+	/// signature: () -> ptr
+	std::string allocateUnboundedFunction();
 
-	/// @returns the name of the function that releases previously allocated temporary memory
-	std::string releaseTemporaryMemoryFunction();
+	/// @returns the name of the function that finalizes an unbounded memory allocation,
+	/// i.e. sets its size.
+	/// signature: (ptr, size) ->
+	std::string finalizeAllocationFunction();
+
+	/// @returns the name of the function that releases previously allocated memory
+	/// signature: (ptr) ->
+	std::string releaseMemoryFunction();
 
 	/// @returns the name of a function that zeroes an array.
 	/// signature: (dataStart, dataSizeInBytes) ->

@@ -1036,13 +1036,13 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 		}
 		solAssert(indexedArgs.size() <= 4, "Too many indexed arguments.");
 		Whiskers templ(R"({
-			let <pos> := <freeMemory>
+			let <pos> := <allocateUnbounded>()
 			let <end> := <encode>(<pos> <nonIndexedArgs>)
 			<log>(<pos>, sub(<end>, <pos>) <indexedArgs>)
 		})");
 		templ("pos", m_context.newYulVariable());
 		templ("end", m_context.newYulVariable());
-		templ("freeMemory", freeMemory());
+		templ("allocateUnbounded", m_utils.allocateUnboundedFunction());
 		templ("encode", abi.tupleEncoder(nonIndexedArgTypes, nonIndexedParamTypes));
 		templ("nonIndexedArgs", joinHumanReadablePrefixed(nonIndexedArgs));
 		templ("log", "log" + to_string(indexedArgs.size()));
@@ -1105,8 +1105,11 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 			else
 			{
 				// Used to reset the free memory pointer later.
+				// TODO This is an abuse of the `allocateUnbounded` function.
+				// We might want to introduce a new set of memory handling functions here
+				// a la "setMemoryCheckPoint" and "freeUntilCheckPoint".
 				string freeMemoryPre = m_context.newYulVariable();
-				m_code << "let " << freeMemoryPre << " := " << freeMemory() << "\n";
+				m_code << "let " << freeMemoryPre << " := " << m_utils.allocateUnboundedFunction() << "()\n";
 				IRVariable array = convert(*arguments[0], *TypeProvider::bytesMemory());
 				IRVariable hashVariable(m_context.newYulVariable(), *TypeProvider::fixedBytes(32));
 
@@ -1122,14 +1125,15 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 					"))\n";
 				IRVariable selectorVariable(m_context.newYulVariable(), *TypeProvider::fixedBytes(4));
 				define(selectorVariable, hashVariable);
-				m_code << "mstore(" << to_string(CompilerUtils::freeMemoryPointer) << ", " << freeMemoryPre << ")\n";
+				// This just resets the free memory pointer.
+				m_code << m_utils.finalizeAllocationFunction() << "(" << freeMemoryPre << ", 0)\n";
 			}
 		}
 		else if (functionType->kind() == FunctionType::Kind::ABIEncodeWithSelector)
 			selector = convert(*arguments.front(), *TypeProvider::fixedBytes(4)).name();
 
 		Whiskers templ(R"(
-			let <data> := <allocateTemporary>()
+			let <data> := <allocateUnbounded>()
 			let <mpos> := add(<data>, 0x20)
 			<?+selector>
 				mstore(<mpos>, <selector>)
@@ -1137,10 +1141,10 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 			</+selector>
 			let <mend> := <encode>(<mpos><arguments>)
 			mstore(<data>, sub(<mend>, add(<data>, 0x20)))
-			mstore(<freeMemPtr>, <roundUp>(<mend>))
+			<finalizeAllocation>(<data>, sub(<mend>, <data>))
 		)");
 		templ("data", IRVariable(_functionCall).part("mpos").name());
-		templ("allocateTemporary", m_utils.allocationTemporaryMemoryFunction());
+		templ("allocateUnbounded", m_utils.allocateUnboundedFunction());
 		templ("mpos", m_context.newYulVariable());
 		templ("mend", m_context.newYulVariable());
 		templ("selector", selector);
@@ -1150,8 +1154,7 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 			m_context.abiFunctions().tupleEncoder(argumentTypes, targetTypes, false)
 		);
 		templ("arguments", joinHumanReadablePrefixed(argumentVars));
-		templ("freeMemPtr", to_string(CompilerUtils::freeMemoryPointer));
-		templ("roundUp", m_utils.roundUpFunction());
+		templ("finalizeAllocation", m_utils.finalizeAllocationFunction());
 
 		m_code << templ.render();
 		break;
@@ -1211,7 +1214,7 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 				solAssert(type(*arguments.front()).isImplicitlyConvertibleTo(*TypeProvider::stringMemory()),"");
 
 				Whiskers templ(R"({
-					let <pos> := <allocateTemporary>()
+					let <pos> := <allocateUnbounded>()
 					mstore(<pos>, <hash>)
 					let <end> := <encode>(add(<pos>, 4) <argumentVars>)
 					revert(<pos>, sub(<end>, <pos>))
@@ -1219,7 +1222,7 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 				templ("pos", m_context.newYulVariable());
 				templ("end", m_context.newYulVariable());
 				templ("hash", util::selectorFromSignature("Error(string)").str());
-				templ("allocateTemporary", m_utils.allocationTemporaryMemoryFunction());
+				templ("allocateUnbounded", m_utils.allocateUnboundedFunction());
 				templ(
 					"argumentVars",
 					joinHumanReadablePrefixed(IRVariable{*arguments.front()}.stackSlots())
@@ -1393,7 +1396,7 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 		m_context.subObjectsCreated().insert(contract);
 
 		Whiskers t(R"(
-			let <memPos> := <allocateTemporaryMemory>()
+			let <memPos> := <allocateUnbounded>()
 			let <memEnd> := add(<memPos>, datasize("<object>"))
 			if or(gt(<memEnd>, 0xffffffffffffffff), lt(<memEnd>, <memPos>)) { <panic>() }
 			datacopy(<memPos>, dataoffset("<object>"), datasize("<object>"))
@@ -1403,17 +1406,17 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 			<!saltSet>
 				let <address> := create(<value>, <memPos>, sub(<memEnd>, <memPos>))
 			</saltSet>
+			<releaseMemory>(<memPos>)
 			<?isTryCall>
 				let <success> := iszero(iszero(<address>))
 			<!isTryCall>
 				if iszero(<address>) { <forwardingRevert>() }
 			</isTryCall>
-			<releaseTemporaryMemory>()
 		)");
 		t("memPos", m_context.newYulVariable());
 		t("memEnd", m_context.newYulVariable());
-		t("allocateTemporaryMemory", m_utils.allocationTemporaryMemoryFunction());
-		t("releaseTemporaryMemory", m_utils.releaseTemporaryMemoryFunction());
+		t("allocateUnbounded", m_utils.allocateUnboundedFunction());
+		t("releaseMemory", m_utils.releaseMemoryFunction());
 		t("object", IRNames::creationObject(*contract));
 		t("panic", m_utils.panicFunction(PanicCode::ResourceError));
 		t("abiEncode",
@@ -1486,19 +1489,21 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 			argumentStrings += IRVariable(*arg).stackSlots();
 		}
 		Whiskers templ(R"(
-			let <pos> := <allocateTemporary>()
+			let <pos> := <allocateUnbounded>()
 			let <end> := <encodeArgs>(<pos> <argumentString>)
 			<?isECRecover>
 				mstore(0, 0)
 			</isECRecover>
 			let <success> := <call>(<gas>, <address> <?isCall>, 0</isCall>, <pos>, sub(<end>, <pos>), 0, 32)
+			<releaseMemory>(<pos>)
 			if iszero(<success>) { <forwardingRevert>() }
 			let <retVars> := <shl>(mload(0))
 		)");
 		templ("call", m_context.evmVersion().hasStaticCall() ? "staticcall" : "call");
 		templ("isCall", !m_context.evmVersion().hasStaticCall());
 		templ("shl", m_utils.shiftLeftFunction(offset * 8));
-		templ("allocateTemporary", m_utils.allocationTemporaryMemoryFunction());
+		templ("allocateUnbounded", m_utils.allocateUnboundedFunction());
+		templ("releaseMemory", m_utils.releaseMemoryFunction());
 		templ("pos", m_context.newYulVariable());
 		templ("end", m_context.newYulVariable());
 		templ("isECRecover", FunctionType::Kind::ECRecover == functionType->kind());
@@ -2360,14 +2365,14 @@ void IRGeneratorForStatements::appendExternalFunctionCall(
 		// We could also just use MLOAD; POP right before the gas calculation, but the optimizer
 		// would remove that, so we use MSTORE here.
 		if (!funType.gasSet() && returnInfo.estimatedReturnSize > 0)
-			m_code << "mstore(add(" << freeMemory() << ", " << to_string(returnInfo.estimatedReturnSize) << "), 0)\n";
+			m_code << "mstore(add(" << m_utils.allocateUnboundedFunction() << "() , " << to_string(returnInfo.estimatedReturnSize) << "), 0)\n";
 	}
 
 	Whiskers templ(R"(
 		if iszero(extcodesize(<address>)) { <revertNoCode> }
 
 		// storage for arguments and returned data
-		let <pos> := <freeMemory>
+		let <pos> := <allocateUnbounded>()
 		mstore(<pos>, <shl28>(<funSel>))
 		let <end> := <encodeArgs>(add(<pos>, 4) <argumentString>)
 
@@ -2383,7 +2388,7 @@ void IRGeneratorForStatements::appendExternalFunctionCall(
 			</dynamicReturnSize>
 
 			// update freeMemoryPointer according to dynamic return size
-			mstore(<freeMemoryPointer>, add(<pos>, <roundUp>(<returnSize>)))
+			<finalizeAllocation>(<pos>, <returnSize>)
 
 			// decode return parameters from external try-call into retVars
 			<?+retVars> <retVars> := </+retVars> <abiDecode>(<pos>, add(<pos>, <returnSize>))
@@ -2396,7 +2401,8 @@ void IRGeneratorForStatements::appendExternalFunctionCall(
 		templ("success", IRNames::trySuccessConditionVariable(_functionCall));
 	else
 		templ("success", m_context.newYulVariable());
-	templ("freeMemory", freeMemory());
+	templ("allocateUnbounded", m_utils.allocateUnboundedFunction());
+	templ("finalizeAllocation", m_utils.finalizeAllocationFunction());
 	templ("shl28", m_utils.shiftLeftFunction(8 * (32 - 4)));
 
 	templ("funSel", IRVariable(_functionCall.expression()).part("functionSelector").name());
@@ -2418,7 +2424,6 @@ void IRGeneratorForStatements::appendExternalFunctionCall(
 	templ("roundUp", m_utils.roundUpFunction());
 	templ("abiDecode", m_context.abiFunctions().tupleDecoder(returnInfo.returnTypes, true));
 	templ("dynamicReturnSize", returnInfo.dynamicReturnSize);
-	templ("freeMemoryPointer", to_string(CompilerUtils::freeMemoryPointer));
 
 	templ("noTryCall", !_functionCall.annotation().tryCall);
 
@@ -2486,7 +2491,7 @@ void IRGeneratorForStatements::appendBareCall(
 	solAssert(!_functionCall.annotation().tryCall, "");
 	Whiskers templ(R"(
 		<?needsEncoding>
-			let <pos> := mload(<freeMemoryPointer>)
+			let <pos> := <allocateUnbounded>()
 			let <length> := sub(<encode>(<pos> <?+arg>,</+arg> <arg>), <pos>)
 		<!needsEncoding>
 			let <pos> := add(<arg>, 0x20)
@@ -2494,12 +2499,14 @@ void IRGeneratorForStatements::appendBareCall(
 		</needsEncoding>
 
 		let <success> := <call>(<gas>, <address>, <?+value> <value>, </+value> <pos>, <length>, 0, 0)
+		<releaseMemory>(<pos>)
 		<?+returndataVar>
 			let <returndataVar> := <extractReturndataFunction>()
 		</+returndataVar>
 	)");
 
-	templ("freeMemoryPointer", to_string(CompilerUtils::freeMemoryPointer));
+	templ("allocateUnbounded", m_utils.allocateUnboundedFunction());
+	templ("releaseMemory", m_utils.releaseMemoryFunction());
 	templ("pos", m_context.newYulVariable());
 	templ("length", m_context.newYulVariable());
 
@@ -2557,11 +2564,6 @@ void IRGeneratorForStatements::appendBareCall(
 	}
 
 	m_code << templ.render();
-}
-
-string IRGeneratorForStatements::freeMemory()
-{
-	return "mload(" + to_string(CompilerUtils::freeMemoryPointer) + ")";
 }
 
 IRVariable IRGeneratorForStatements::convert(IRVariable const& _from, Type const& _to)

@@ -183,15 +183,15 @@ string YulUtilFunctions::requireOrAssertFunction(bool _assert, Type const* _mess
 		return Whiskers(R"(
 			function <functionName>(condition <messageVars>) {
 				if iszero(condition) {
-					let fmp := mload(<freeMemPointer>)
-					mstore(fmp, <errorHash>)
-					let end := <abiEncodeFunc>(add(fmp, <hashHeaderSize>) <messageVars>)
-					revert(fmp, sub(end, fmp))
+					let memPtr := <allocateUnbounded>()
+					mstore(memPtr, <errorHash>)
+					let end := <abiEncodeFunc>(add(memPtr, <hashHeaderSize>) <messageVars>)
+					revert(memPtr, sub(end, memPtr))
 				}
 			}
 		)")
 		("functionName", functionName)
-		("freeMemPointer", to_string(CompilerUtils::freeMemoryPointer))
+		("allocateUnbounded", allocateUnboundedFunction())
 		("errorHash", formatNumber(errorHash))
 		("abiEncodeFunc", encodeFunc)
 		("hashHeaderSize", to_string(hashHeaderSize))
@@ -2309,18 +2309,18 @@ string YulUtilFunctions::copyArrayFromStorageToMemoryFunction(ArrayType const& _
 			ABIFunctions abi(m_evmVersion, m_revertStrings, m_functionCollector);
 			return Whiskers(R"(
 				function <functionName>(slot) -> memptr {
-					memptr := <allocateTemp>()
+					memptr := <allocateUnbounded>()
 					let end := <encode>(slot, memptr)
-					mstore(<freeMemoryPointer>, end)
+					<finalizeAllocation>(memptr, sub(end, memptr))
 				}
 			)")
 			("functionName", functionName)
-			("allocateTemp", allocationTemporaryMemoryFunction())
+			("allocateUnbounded", allocateUnboundedFunction())
 			(
 				"encode",
 				abi.abiEncodeAndReturnUpdatedPosFunction(_from, _to, ABIFunctions::EncodingOptions{})
 			)
-			("freeMemoryPointer", to_string(CompilerUtils::freeMemoryPointer))
+			("finalizeAllocation", finalizeAllocationFunction())
 			.render();
 		}
 		else
@@ -2800,27 +2800,24 @@ string YulUtilFunctions::prepareStoreFunction(Type const& _type)
 
 string YulUtilFunctions::allocationFunction()
 {
-	string functionName = "allocateMemory";
+	string functionName = "allocate_memory";
 	return m_functionCollector.createFunction(functionName, [&]() {
 		return Whiskers(R"(
 			function <functionName>(size) -> memPtr {
-				memPtr := mload(<freeMemoryPointer>)
-				let newFreePtr := add(memPtr, size)
-				// protect against overflow
-				if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { <panic>() }
-				mstore(<freeMemoryPointer>, newFreePtr)
+				memPtr := <allocateUnbounded>()
+				<finalizeAllocation>(memPtr, size)
 			}
 		)")
 		("functionName", functionName)
-		("freeMemoryPointer", to_string(CompilerUtils::freeMemoryPointer))
-		("panic", panicFunction(PanicCode::ResourceError))
+		("allocateUnbounded", allocateUnboundedFunction())
+		("finalizeAllocation", finalizeAllocationFunction())
 		.render();
 	});
 }
 
-string YulUtilFunctions::allocationTemporaryMemoryFunction()
+string YulUtilFunctions::allocateUnboundedFunction()
 {
-	string functionName = "allocateTemporaryMemory";
+	string functionName = "allocate_unbounded";
 	return m_functionCollector.createFunction(functionName, [&]() {
 		return Whiskers(R"(
 			function <functionName>() -> memPtr {
@@ -2833,12 +2830,32 @@ string YulUtilFunctions::allocationTemporaryMemoryFunction()
 	});
 }
 
-string YulUtilFunctions::releaseTemporaryMemoryFunction()
+string YulUtilFunctions::finalizeAllocationFunction()
 {
-	string functionName = "releaseTemporaryMemory";
+	string functionName = "finalize_allocation";
+	return m_functionCollector.createFunction(functionName, [&]() {
+		return Whiskers(R"(
+			function <functionName>(memPtr, size) {
+				let newFreePtr := add(memPtr, <roundUp>(size))
+				// protect against overflow
+				if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { <panic>() }
+				mstore(<freeMemoryPointer>, newFreePtr)
+			}
+		)")
+		("functionName", functionName)
+		("freeMemoryPointer", to_string(CompilerUtils::freeMemoryPointer))
+		("roundUp", roundUpFunction())
+		("panic", panicFunction(PanicCode::ResourceError))
+		.render();
+	});
+}
+
+string YulUtilFunctions::releaseMemoryFunction()
+{
+	string functionName = "release_memory";
 	return m_functionCollector.createFunction(functionName, [&](){
 		return Whiskers(R"(
-			function <functionName>() {
+			function <functionName>(memPtr) {
 			}
 		)")
 		("functionName", functionName)
@@ -3632,7 +3649,7 @@ string YulUtilFunctions::packedHashFunction(
 	return m_functionCollector.createFunction(functionName, [&]() {
 		Whiskers templ(R"(
 			function <functionName>(<variables>) -> hash {
-				let pos := mload(<freeMemoryPointer>)
+				let pos := <allocateUnbounded>()
 				let end := <packedEncode>(pos <comma> <variables>)
 				hash := keccak256(pos, sub(end, pos))
 			}
@@ -3640,7 +3657,7 @@ string YulUtilFunctions::packedHashFunction(
 		templ("functionName", functionName);
 		templ("variables", suffixedVariableNameList("var_", 1, 1 + sizeOnStack));
 		templ("comma", sizeOnStack > 0 ? "," : "");
-		templ("freeMemoryPointer", to_string(CompilerUtils::freeMemoryPointer));
+		templ("allocateUnbounded", allocateUnboundedFunction());
 		templ("packedEncode", ABIFunctions(m_evmVersion, m_revertStrings, m_functionCollector).tupleEncoderPacked(_givenTypes, _targetTypes));
 		return templ.render();
 	});
@@ -4156,7 +4173,7 @@ string YulUtilFunctions::tryDecodeErrorMessageFunction()
 			function <functionName>() -> ret {
 				if lt(returndatasize(), 0x44) { leave }
 
-				let data := mload(<freeMemoryPointer>)
+				let data := <allocateUnbounded>()
 				returndatacopy(data, 4, sub(returndatasize(), 4))
 
 				let offset := mload(data)
@@ -4174,13 +4191,13 @@ string YulUtilFunctions::tryDecodeErrorMessageFunction()
 				let end := add(add(msg, 0x20), length)
 				if gt(end, add(data, sub(returndatasize(), 4))) { leave }
 
-				mstore(<freeMemoryPointer>, add(add(msg, 0x20), <roundUp>(length)))
+				<finalizeAllocation>(data, add(add(offset, msg), add(0x20, length)))
 				ret := msg
 			}
 		)")
 		("functionName", functionName)
-		("freeMemoryPointer", to_string(CompilerUtils::freeMemoryPointer))
-		("roundUp", roundUpFunction())
+		("allocateUnbounded", allocateUnboundedFunction())
+		("finalizeAllocation", finalizeAllocationFunction())
 		.render();
 	});
 }
