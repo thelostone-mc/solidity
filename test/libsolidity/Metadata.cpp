@@ -361,28 +361,16 @@ BOOST_AUTO_TEST_CASE(metadata_revert_strings)
 
 BOOST_AUTO_TEST_CASE(metadata_license_missing)
 {
-	CompilerStack compilerStack;
 	char const* sourceCode = R"(
 		pragma solidity >=0.0;
 		contract C {
 		}
 	)";
-	compilerStack.setSources({{"", std::string(sourceCode)}});
-	BOOST_REQUIRE_MESSAGE(compilerStack.compile(), "Compiling contract failed");
-
-	std::string const& serialisedMetadata = compilerStack.metadata("C");
-	BOOST_CHECK(solidity::test::isValidMetadata(serialisedMetadata));
-	Json::Value metadata;
-	BOOST_REQUIRE(util::jsonParseStrict(serialisedMetadata, metadata));
-
-	BOOST_CHECK_EQUAL(metadata["sources"].size(), 1);
-	BOOST_CHECK(metadata["sources"].isMember(""));
-	BOOST_CHECK(!metadata["sources"][""].isMember("license"));
+	BOOST_CHECK(compileAndCheckLicenseMetadata("C", sourceCode) == nullopt);
 }
 
 BOOST_AUTO_TEST_CASE(metadata_license_gpl3)
 {
-	CompilerStack compilerStack;
 	// Can't use a raw string here due to the stylechecker.
 	char const* sourceCode =
 		"// NOTE: we also add trailing whitespace after the license, to see it is trimmed.\n"
@@ -390,18 +378,7 @@ BOOST_AUTO_TEST_CASE(metadata_license_gpl3)
 		"pragma solidity >=0.0;\n"
 		"contract C {\n"
 		"}\n";
-	compilerStack.setSources({{"", std::string(sourceCode)}});
-	BOOST_REQUIRE_MESSAGE(compilerStack.compile(), "Compiling contract failed");
-
-	std::string const& serialisedMetadata = compilerStack.metadata("C");
-	BOOST_CHECK(solidity::test::isValidMetadata(serialisedMetadata));
-	Json::Value metadata;
-	BOOST_REQUIRE(util::jsonParseStrict(serialisedMetadata, metadata));
-
-	BOOST_CHECK_EQUAL(metadata["sources"].size(), 1);
-	BOOST_CHECK(metadata["sources"].isMember(""));
-	BOOST_CHECK(metadata["sources"][""].isMember("license"));
-	BOOST_CHECK_EQUAL(metadata["sources"][""]["license"].asString(), "GPL-3.0");
+	BOOST_CHECK(compileAndCheckLicenseMetadata("C", sourceCode) == "GPL-3.0");
 }
 
 BOOST_AUTO_TEST_CASE(metadata_license_whitespace_before_spdx)
@@ -424,70 +401,35 @@ BOOST_AUTO_TEST_CASE(metadata_license_whitespace_after_colon)
 
 BOOST_AUTO_TEST_CASE(metadata_license_gpl3_or_apache2)
 {
-	CompilerStack compilerStack;
 	char const* sourceCode = R"(
 		// SPDX-License-Identifier: GPL-3.0 OR Apache-2.0
 		pragma solidity >=0.0;
 		contract C {
 		}
 	)";
-	compilerStack.setSources({{"", std::string(sourceCode)}});
-	BOOST_REQUIRE_MESSAGE(compilerStack.compile(), "Compiling contract failed");
-
-	std::string const& serialisedMetadata = compilerStack.metadata("C");
-	BOOST_CHECK(solidity::test::isValidMetadata(serialisedMetadata));
-	Json::Value metadata;
-	BOOST_REQUIRE(util::jsonParseStrict(serialisedMetadata, metadata));
-
-	BOOST_CHECK_EQUAL(metadata["sources"].size(), 1);
-	BOOST_CHECK(metadata["sources"].isMember(""));
-	BOOST_CHECK(metadata["sources"][""].isMember("license"));
-	BOOST_CHECK_EQUAL(metadata["sources"][""]["license"].asString(), "GPL-3.0 OR Apache-2.0");
+	BOOST_CHECK(compileAndCheckLicenseMetadata("C", sourceCode) == "GPL-3.0 OR Apache-2.0");
 }
 
 BOOST_AUTO_TEST_CASE(metadata_license_ignored_unicode)
 {
-	CompilerStack compilerStack;
 	char const* sourceCode = R"(
 		// SPDX-License-Identifier: ⡉⡊⡋⡌⡍⡎⡏⡐⡑⡒
 		pragma solidity >=0.0;
 		contract C {
 		}
 	)";
-	compilerStack.setSources({{"", std::string(sourceCode)}});
-	BOOST_REQUIRE_MESSAGE(compilerStack.compile(), "Compiling contract failed");
-
-	std::string const& serialisedMetadata = compilerStack.metadata("C");
-	BOOST_CHECK(solidity::test::isValidMetadata(serialisedMetadata));
-	Json::Value metadata;
-	BOOST_REQUIRE(util::jsonParseStrict(serialisedMetadata, metadata));
-
-	BOOST_CHECK_EQUAL(metadata["sources"].size(), 1);
-	BOOST_CHECK(metadata["sources"].isMember(""));
-	BOOST_CHECK(!metadata["sources"][""].isMember("license"));
+	BOOST_CHECK(compileAndCheckLicenseMetadata("C", sourceCode) == nullopt);
 }
 
 BOOST_AUTO_TEST_CASE(metadata_license_ignored_stray_unicode)
 {
-	CompilerStack compilerStack;
 	char const* sourceCode = R"(
 		// SPDX-License-Identifier: GPL-3.0 ⡉⡊⡋⡌⡍⡎⡏⡐⡑⡒
 		pragma solidity >=0.0;
 		contract C {
 		}
 	)";
-	compilerStack.setSources({{"", std::string(sourceCode)}});
-	BOOST_REQUIRE_MESSAGE(compilerStack.compile(), "Compiling contract failed");
-
-	std::string const& serialisedMetadata = compilerStack.metadata("C");
-	BOOST_CHECK(solidity::test::isValidMetadata(serialisedMetadata));
-	Json::Value metadata;
-	BOOST_REQUIRE(util::jsonParseStrict(serialisedMetadata, metadata));
-
-	BOOST_CHECK_EQUAL(metadata["sources"].size(), 1);
-	BOOST_CHECK(metadata["sources"].isMember(""));
-	BOOST_CHECK(metadata["sources"][""].isMember("license"));
-	BOOST_CHECK_EQUAL(metadata["sources"][""]["license"].asString(), "GPL-3.0");
+	BOOST_CHECK(compileAndCheckLicenseMetadata("C", sourceCode) == "GPL-3.0");
 }
 
 BOOST_AUTO_TEST_SUITE_END()
