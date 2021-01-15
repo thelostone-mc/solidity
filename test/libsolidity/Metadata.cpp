@@ -385,11 +385,11 @@ BOOST_AUTO_TEST_CASE(metadata_license_gpl3)
 	CompilerStack compilerStack;
 	// Can't use a raw string here due to the stylechecker.
 	char const* sourceCode =
-		"// NOTE: we also add trailing whitespace after the license, to see it is trimmed."
-		"// SPDX-License-Identifier: GPL-3.0    "
-		"pragma solidity >=0.0;"
-		"contract C {"
-		"}";
+		"// NOTE: we also add trailing whitespace after the license, to see it is trimmed.\n"
+		"// SPDX-License-Identifier: GPL-3.0    \n"
+		"pragma solidity >=0.0;\n"
+		"contract C {\n"
+		"}\n";
 	compilerStack.setSources({{"", std::string(sourceCode)}});
 	BOOST_REQUIRE_MESSAGE(compilerStack.compile(), "Compiling contract failed");
 
@@ -402,6 +402,24 @@ BOOST_AUTO_TEST_CASE(metadata_license_gpl3)
 	BOOST_CHECK(metadata["sources"].isMember(""));
 	BOOST_CHECK(metadata["sources"][""].isMember("license"));
 	BOOST_CHECK_EQUAL(metadata["sources"][""]["license"].asString(), "GPL-3.0");
+}
+
+BOOST_AUTO_TEST_CASE(metadata_license_whitespace_before_spdx)
+{
+	char const* sourceCode = R"(
+		//     SPDX-License-Identifier: GPL-3.0
+		contract C {}
+	)";
+	BOOST_CHECK(compileAndCheckLicenseMetadata("C", sourceCode) == "GPL-3.0");
+}
+
+BOOST_AUTO_TEST_CASE(metadata_license_whitespace_after_colon)
+{
+	char const* sourceCode = R"(
+		// SPDX-License-Identifier:    GPL-3.0
+		contract C {}
+	)";
+	BOOST_CHECK(compileAndCheckLicenseMetadata("C", sourceCode) == "GPL-3.0");
 }
 
 BOOST_AUTO_TEST_CASE(metadata_license_gpl3_or_apache2)
